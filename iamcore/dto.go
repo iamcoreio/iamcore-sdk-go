@@ -1,5 +1,5 @@
 package iamcore
 
-type UserIrnResponseDTO struct {
+type UserIRNResponseDTO struct {
 	Data string `json:"data"`
 }

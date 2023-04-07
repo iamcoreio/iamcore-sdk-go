@@ -3,10 +3,11 @@ package sdk
 import (
 	"context"
 	"errors"
-	"gitlab.kaaiot.net/core/lib/iamcore/irn.git"
 	"net/http"
 
 	"github.com/kaaproject/httperror"
+
+	"gitlab.kaaiot.net/core/lib/iamcore/irn.git"
 )
 
 type AuthenticationClient interface {
