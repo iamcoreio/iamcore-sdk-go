@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	"gitlab.kaaiot.net/core/lib/go-config.git"
 	monitoring "gitlab.kaaiot.net/core/lib/go-metrics.git"
 )
 
@@ -30,13 +29,13 @@ const (
 // ConfigProvider is the configuration data provider interface.
 // The interface is explicitly defined to avoid dependency on go-config.
 type ConfigProvider interface {
-	config.StringBoolIntGetter
+	GetString(key string) string
 
-	config.EnvBinder
+	BoolGetter
+	EnvBinder
+	DefaultSetter
 
-	config.DefaultSetter
-
-	config.DebugLoggingGetter
+	DebugLogging() bool
 }
 
 // NewOptions returns Options based on the data provided by ConfigProvider.
@@ -67,12 +66,22 @@ func (o *Options) validate() error {
 	return nil
 }
 
-func bindEnvVariables(cfg config.EnvBinder) {
+type EnvBinder interface{ BindEnv(input ...string) error }
+
+type BoolGetter interface {
+	GetBool(key string) bool
+}
+
+type DefaultSetter interface {
+	SetDefault(key string, value interface{})
+}
+
+func bindEnvVariables(cfg EnvBinder) {
 	if err := cfg.BindEnv(iamcoreURLKey, iamcoreURLEnvKey); err != nil {
 		log.Printf("Error binding %q environment variable: %v", iamcoreURLKey, err)
 	}
 }
 
-func setDefaults(cfg config.DefaultSetter) {
+func setDefaults(cfg DefaultSetter) {
 	cfg.SetDefault(iamcoreURLKey, iamcoreDefaultURL)
 }
