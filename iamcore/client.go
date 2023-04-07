@@ -43,8 +43,7 @@ func (c *Client) GetUserIRN(authorizationHeader string) (*irn.IRN, error) {
 	defer gotResponse.Body.Close()
 
 	userIrnResponseDTO := &UserIrnResponseDTO{}
-	err = json.NewDecoder(gotResponse.Body).Decode(&userIrnResponseDTO)
-	if err != nil {
+	if err := json.NewDecoder(gotResponse.Body).Decode(&userIrnResponseDTO); err != nil {
 		return nil, err
 	}
 
