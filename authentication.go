@@ -1,7 +1,9 @@
-package authenticator
+package sdk
 
 import (
 	"context"
+	"errors"
+	"gitlab.kaaiot.net/core/lib/iamcore/irn.git"
 	"net/http"
 
 	"github.com/kaaproject/httperror"
@@ -19,21 +21,13 @@ type AuthenticationClient interface {
 // contextKeyType is a context.Context key type
 type contextKeyType int
 
-type Client struct {
-	authenticators []Authenticator
-}
-
-func NewClient(authenticators []Authenticator) *Client {
-	return &Client{
-		authenticators: authenticators,
-	}
-}
-
 const (
 	principalIRNKey contextKeyType = 5
 )
 
-func (c *Client) WithAuth(next http.Handler) http.Handler {
+var ErrPrincipalIRNIsNotSet = errors.New("principal IRN is not set")
+
+func (c *client) WithAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for i := range c.authenticators {
 			principal, err := c.authenticators[i].Authenticate(r.Context(), r.Header)
@@ -56,4 +50,44 @@ func (c *Client) WithAuth(next http.Handler) http.Handler {
 
 		httperror.Write(w, httperror.New(http.StatusUnauthorized, "Authentication header is missed"))
 	})
+}
+
+// Principal extracts and returns principal's IRN from the request context.
+func Principal(ctx context.Context) (*irn.IRN, error) {
+	principal, ok := ctx.Value(principalIRNKey).(*irn.IRN)
+	if !ok {
+		return nil, ErrPrincipalIRNIsNotSet
+	}
+
+	return principal, nil
+}
+
+// AccountID extracts and returns account ID from the request context.
+func AccountID(ctx context.Context) string {
+	principal, ok := ctx.Value(principalIRNKey).(*irn.IRN)
+	if !ok {
+		return ""
+	}
+
+	return principal.GetAccountID()
+}
+
+// TenantID extracts and returns tenant ID from the request context.
+func TenantID(ctx context.Context) string {
+	principal, ok := ctx.Value(principalIRNKey).(*irn.IRN)
+	if !ok {
+		return ""
+	}
+
+	return principal.GetTenantID()
+}
+
+// Path extracts and returns principal's path from the request context.
+func Path(ctx context.Context) string {
+	principal, ok := ctx.Value(principalIRNKey).(*irn.IRN)
+	if !ok {
+		return ""
+	}
+
+	return principal.GetPath()
 }
