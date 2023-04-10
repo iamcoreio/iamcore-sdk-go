@@ -1,4 +1,0 @@
-include:
-  - project: 'devops/gitlab-ci-templates'
-    file: '/golang/.default_golang_pipeline.yml'
-    ref: '0.1.15'

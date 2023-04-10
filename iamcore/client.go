@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	sdk "gitlab.kaaiot.net/core/lib/iamcore/iamcore-sdk-go.git"
 	"gitlab.kaaiot.net/core/lib/iamcore/irn.git"
 )
 
@@ -19,7 +18,7 @@ type Client struct {
 	httpClient *http.Client
 }
 
-func NewClient(opts *sdk.Options, httpClient *http.Client) *Client {
+func NewClient(opts *Options, httpClient *http.Client) *Client {
 	return &Client{
 		host: opts.IamcoreURL,
 

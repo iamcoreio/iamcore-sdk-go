@@ -1,23 +1,14 @@
-package sdk
+package iamcore
 
 import (
 	"fmt"
 	"log"
-
-	monitoring "gitlab.kaaiot.net/core/lib/go-metrics.git"
 )
 
-// Options specifies the authentication options.
 type Options struct {
 
 	// IamcoreURL to access the Iamcore; "https://cloud.iamcore.io/" by default.
 	IamcoreURL string
-
-	// MonitoringDisabled defines whether to expose monitoring endpoints; false by default.
-	MonitoringDisabled bool
-
-	// DebugLogging enables debug level logging in the subsystem. Disabled by default.
-	DebugLogging bool
 }
 
 const (
@@ -31,11 +22,8 @@ const (
 type ConfigProvider interface {
 	GetString(key string) string
 
-	BoolGetter
 	EnvBinder
 	DefaultSetter
-
-	DebugLogging() bool
 }
 
 // NewOptions returns Options based on the data provided by ConfigProvider.
@@ -48,29 +36,22 @@ func NewOptions(cfg ConfigProvider) *Options {
 
 	return &Options{
 		IamcoreURL: cfg.GetString(iamcoreURLKey),
-
-		MonitoringDisabled: cfg.GetBool(monitoring.MonitoringDisabledKey),
-		DebugLogging:       cfg.DebugLogging(),
 	}
 }
 
-// validate validates necessary Authentication client properties and return error when validation failed.
-func (o *Options) validate() error {
+// Validate validates necessary Authentication client properties and return error when validation failed.
+func (o *Options) Validate() error {
 	switch {
 	case o == nil:
 		return fmt.Errorf("nil options")
 	case o.IamcoreURL == "":
-		return fmt.Errorf("iamcore IamcoreURL is a required")
+		return fmt.Errorf("iamcoreURL is a required")
 	}
 
 	return nil
 }
 
 type EnvBinder interface{ BindEnv(input ...string) error }
-
-type BoolGetter interface {
-	GetBool(key string) bool
-}
 
 type DefaultSetter interface {
 	SetDefault(key string, value interface{})

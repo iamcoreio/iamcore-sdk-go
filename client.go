@@ -16,16 +16,14 @@ type client struct {
 	authenticators []Authenticator
 }
 
-func NewClient(opts *Options) (Client, error) {
-	if err := opts.validate(); err != nil {
+func NewClient(opts *iamcore.Options) (Client, error) {
+	if err := opts.Validate(); err != nil {
 		return nil, nil
 	}
 
-	iamcoreClient := iamcore.NewClient(opts, http.DefaultClient)
-
 	return &client{
 		[]Authenticator{
-			NewBearer(iamcoreClient),
+			NewBearer(iamcore.NewClient(opts, http.DefaultClient)),
 		},
 	}, nil
 }
