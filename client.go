@@ -3,7 +3,6 @@ package sdk
 import (
 	"net/http"
 
-	"gitlab.kaaiot.net/core/lib/iamcore/iamcore-sdk-go.git/authenticator"
 	"gitlab.kaaiot.net/core/lib/iamcore/iamcore-sdk-go.git/iamcore"
 )
 
@@ -14,7 +13,7 @@ type Client interface {
 }
 
 type client struct {
-	authenticators []authenticator.Authenticator
+	authenticators []Authenticator
 }
 
 func NewClient(opts *Options) (Client, error) {
@@ -25,8 +24,8 @@ func NewClient(opts *Options) (Client, error) {
 	iamcoreClient := iamcore.NewClient(opts, http.DefaultClient)
 
 	return &client{
-		[]authenticator.Authenticator{
-			authenticator.NewBearer(iamcoreClient),
+		[]Authenticator{
+			NewBearer(iamcoreClient),
 		},
 	}, nil
 }

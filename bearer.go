@@ -1,4 +1,4 @@
-package authenticator
+package sdk
 
 import (
 	"context"
