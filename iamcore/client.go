@@ -2,14 +2,14 @@ package iamcore
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"gitlab.kaaiot.net/core/lib/iamcore/irn.git"
 )
 
 const (
-	authorizationHeaderName = "Authorization"
-	iamcoreGetUserIrnPath   = "api/v1/users/me/irn"
+	userIRNPath = "api/v1/users/me/irn"
 )
 
 type Client struct {
@@ -18,33 +18,39 @@ type Client struct {
 	httpClient *http.Client
 }
 
-func NewClient(opts *Options, httpClient *http.Client) *Client {
+func NewClient(host string, httpClient *http.Client) *Client {
 	return &Client{
-		host: opts.IamcoreURL,
+		host: host,
 
 		httpClient: httpClient,
 	}
 }
 
-func (c *Client) GetUserIRN(authorizationHeader string) (*irn.IRN, error) {
-	req, err := http.NewRequest(http.MethodGet, c.host+iamcoreGetUserIrnPath, nil)
+func (c *Client) GetPrincipalIRN(headerName, headerValue string) (*irn.IRN, error) {
+	request, err := http.NewRequest(http.MethodGet, c.GetURL(userIRNPath), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set(authorizationHeaderName, authorizationHeader)
+	request.Header = http.Header{
+		headerName: {headerValue},
+	}
 
-	gotResponse, err := http.DefaultClient.Do(req)
+	response, err := c.httpClient.Do(request)
 	if err != nil {
 		return nil, err
 	}
 
-	defer gotResponse.Body.Close()
+	defer response.Body.Close()
 
-	userIRNResponseDTO := &UserIRNResponseDTO{}
-	if err := json.NewDecoder(gotResponse.Body).Decode(&userIRNResponseDTO); err != nil {
+	responseDTO := &UserIRNResponseDTO{}
+	if err := json.NewDecoder(response.Body).Decode(&responseDTO); err != nil {
 		return nil, err
 	}
 
-	return irn.NewIRNFromString(userIRNResponseDTO.Data)
+	return irn.NewIRNFromString(responseDTO.Data)
+}
+
+func (c *Client) GetURL(path string) string {
+	return fmt.Sprintf("https://%s/%s", c.host, path)
 }

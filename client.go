@@ -10,20 +10,27 @@ import (
 // - OpenID Connect-based, OAuth 2.0-compliant middleware for authenticating API calls;
 type Client interface {
 	AuthenticationClient
+	AuthorizationClient
 }
 
 type client struct {
 	authenticators []Authenticator
+	iamcoreClient  *iamcore.Client
 }
 
-func NewClient(opts *iamcore.Options) (Client, error) {
-	if err := opts.Validate(); err != nil {
-		return nil, nil
+func NewClient(apiKey, iamcoreHost string) (Client, error) {
+	options, err := newOptions(apiKey, iamcoreHost)
+	if err != nil {
+		return nil, err
 	}
+
+	iamcoreClient := iamcore.NewClient(options.iamcoreHost, http.DefaultClient)
 
 	return &client{
 		[]Authenticator{
-			NewBearer(iamcore.NewClient(opts, http.DefaultClient)),
+			NewBearer(iamcoreClient),
+			NewAPIKey(iamcoreClient),
 		},
+		iamcoreClient,
 	}, nil
 }
