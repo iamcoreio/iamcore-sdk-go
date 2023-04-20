@@ -5,17 +5,22 @@ import (
 	"net/http"
 )
 
-type Client struct {
+type Client interface {
+	AuthenticationClient
+	AuthorizationClient
+}
+
+type сlient struct {
 	authenticators []Authenticator
 	iamcoreClient  *ServerClient
 	disabled       bool
 }
 
-func NewClient(apiKey, iamcoreHost string, disabled bool) (*Client, error) {
+func NewClient(apiKey, iamcoreHost string, disabled bool) (Client, error) {
 	if disabled {
 		log.Println("iamcore SDK is DISABLED")
 
-		return &Client{
+		return &сlient{
 			disabled: true,
 		}, nil
 	}
@@ -27,7 +32,7 @@ func NewClient(apiKey, iamcoreHost string, disabled bool) (*Client, error) {
 
 	iamcoreClient := NewServerClient(options.iamcoreHost, http.DefaultClient)
 
-	return &Client{
+	return &сlient{
 		authenticators: []Authenticator{
 			NewBearer(iamcoreClient),
 			NewAPIKey(iamcoreClient),

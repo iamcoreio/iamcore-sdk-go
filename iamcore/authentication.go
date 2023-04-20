@@ -28,7 +28,7 @@ const (
 	principalIRNKey        contextKeyType = 1
 )
 
-func (c *Client) WithAuth(next http.Handler) http.Handler {
+func (c *сlient) WithAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if c.disabled {
 			next.ServeHTTP(w, r)
