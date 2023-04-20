@@ -183,6 +183,8 @@ linters:
     - exhaustivestruct
     - exhaustruct
     - wrapcheck
+    - asciicheck
+    - ireturn
 
 issues:
 #  # List of regexps of issue texts to exclude, empty list by default.

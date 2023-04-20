@@ -25,7 +25,7 @@ type AuthorizationClient interface {
 	Authorize(ctx context.Context, resourceType, resourcePath string, resourceIDs, actions []string) ([]string, error)
 }
 
-func (c *Client) Authorize(ctx context.Context, resourceType, resourcePath string, resourceIDs, actions []string) ([]string, error) {
+func (c *сlient) Authorize(ctx context.Context, resourceType, resourcePath string, resourceIDs, actions []string) ([]string, error) {
 	if c.disabled {
 		return resourceIDs, ErrSecurityDisabled
 	}
