@@ -1,0 +1,6 @@
+variables:
+  GO_SOURCES_DIR: ./iamcore
+
+include:
+  - project: 'devops/gitlab-ci-templates'
+    file: '/golang/.default_golang_pipeline.yml'

@@ -1,20 +1,23 @@
-package sdk
+package iamcore
 
 import (
+	"errors"
 	"os"
 )
+
+var ErrEmptyAPIKey = errors.New("empty API key")
 
 type Options struct {
 	// iamcoreHost to access the iamcore; "cloud.iamcore.io" by default.
 	iamcoreHost string
-	// API key for outbound HTTP requests to secured applications by iamcore or iamcore itself
+	// API key for outbound HTTP requests to secured by iamcore applications or iamcore itself
 	apiKey string
 }
 
 const (
-	apiKeyEnvKey      = "API_KEY"
-	iamcoreHostEnvKey = "IAMCORE_HOST"
+	apiKeyEnvKey = "API_KEY"
 
+	iamcoreHostEnvKey  = "IAMCORE_HOST"
 	iamcoreDefaultHost = "cloud.iamcore.io"
 )
 
@@ -24,7 +27,7 @@ func newOptions(apiKey, iamcoreHost string) (*Options, error) {
 	}
 
 	if apiKey == "" {
-		return nil, ErrAPIKeyIsEmpty
+		return nil, ErrEmptyAPIKey
 	}
 
 	if iamcoreHost == "" {
