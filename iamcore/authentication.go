@@ -119,10 +119,10 @@ func AuthorizationHeader(ctx context.Context) (http.Header, error) {
 }
 
 func writeResponseMessage(w http.ResponseWriter, statusCode int, message string) {
-	w.WriteHeader(statusCode)
-
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
+
+	w.WriteHeader(statusCode)
 
 	responseDTO := &ErrorResponseDTO{
 		Message: message,
