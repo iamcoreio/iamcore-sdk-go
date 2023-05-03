@@ -14,6 +14,8 @@ type сlient struct {
 	authenticators []Authenticator
 	iamcoreClient  *ServerClient
 	disabled       bool
+
+	apiKey string
 }
 
 func NewClient(apiKey, iamcoreHost string, disabled bool) (Client, error) {
@@ -39,5 +41,7 @@ func NewClient(apiKey, iamcoreHost string, disabled bool) (Client, error) {
 		},
 		iamcoreClient: iamcoreClient,
 		disabled:      false,
+
+		apiKey: options.apiKey,
 	}, nil
 }

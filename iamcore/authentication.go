@@ -18,6 +18,9 @@ type AuthenticationClient interface {
 	// It populates the request context with validated requester principal's IRN for further use.
 	// Returns 401 Unauthorized HTTP error in case of unauthorized access, and stops HTTP request propagation.
 	WithAuth(next http.Handler) http.Handler
+
+	// SetAuthorizationHeader sets "X-iamcore-API-Key" authentication header to HTTP request.
+	SetAuthorizationHeader(r *http.Request)
 }
 
 // contextKeyType is a context.Context key type.
@@ -66,6 +69,10 @@ func (c *сlient) WithAuth(next http.Handler) http.Handler {
 
 		writeResponseMessage(w, http.StatusUnauthorized, "Failed to authenticate request with any of available authenticators")
 	})
+}
+
+func (c *сlient) SetAuthorizationHeader(r *http.Request) {
+	r.Header.Set(apiKeyHeaderName, c.apiKey)
 }
 
 // PrincipalIRN extracts and returns principal's IRN from the request context.
