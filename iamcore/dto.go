@@ -23,3 +23,11 @@ type AuthorizedOnResourceListRequestDTO struct {
 	Resources []*irn.IRN `json:"resources"`
 	Action    string     `json:"action"`
 }
+
+type CreateResourceRequestDTO struct {
+	Name         string
+	Path         string
+	ResourceType string
+	Enabled      bool
+	TenantID     string
+}
