@@ -7,7 +7,7 @@ import (
 	"gitlab.kaaiot.net/core/lib/iamcore/irn.git"
 )
 
-var ErrSecurityDisabled = errors.New("security disabled")
+var ErrSDKDisabled = errors.New("SDK disabled")
 
 type AuthorizationClient interface {
 	// Authorize returns resources to which user has ALL the requested actions granted.
@@ -19,7 +19,7 @@ type AuthorizationClient interface {
 	//
 	// Neither passed resources nor actions can contain wildcards.
 	//
-	// Returns ErrSecurityDisabled error in case SDK is disabled.
+	// Returns ErrSDKDisabled error in case SDK is disabled.
 	// Returns ErrUnauthenticated error in case of unauthorized access.
 	// Returns ErrForbidden error in case authenticated principal does not have sufficient permissions to requested resources.
 	Authorize(ctx context.Context, resourceType, resourcePath string, resourceIDs, actions []string) ([]string, error)
@@ -27,10 +27,10 @@ type AuthorizationClient interface {
 
 func (c *сlient) Authorize(ctx context.Context, resourceType, resourcePath string, resourceIDs, actions []string) ([]string, error) {
 	if c.disabled {
-		return resourceIDs, ErrSecurityDisabled
+		return resourceIDs, ErrSDKDisabled
 	}
 
-	authorizationHeader, err := AuthorizationHeader(ctx)
+	authorizationHeader, err := PrincipalAuthorizationHeader(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -19,16 +19,16 @@ type AuthenticationClient interface {
 	// Returns 401 Unauthorized HTTP error in case of unauthorized access, and stops HTTP request propagation.
 	WithAuth(next http.Handler) http.Handler
 
-	// SetAuthorizationHeader sets "X-iamcore-API-Key" authentication header to HTTP request.
-	SetAuthorizationHeader(r *http.Request)
+	// SetAPIKeyAuthorizationHeader sets "X-iamcore-API-Key" authentication header to HTTP request.
+	SetAPIKeyAuthorizationHeader(r *http.Request)
 }
 
 // contextKeyType is a context.Context key type.
 type contextKeyType int
 
 const (
-	authorizationHeaderKey contextKeyType = 0
-	principalIRNKey        contextKeyType = 1
+	principalAuthorizationHeaderKey contextKeyType = 0
+	principalIRNKey                 contextKeyType = 1
 )
 
 func (c *сlient) WithAuth(next http.Handler) http.Handler {
@@ -56,7 +56,7 @@ func (c *сlient) WithAuth(next http.Handler) http.Handler {
 				ctx := r.Context()
 
 				ctx = context.WithValue(ctx, principalIRNKey, principal)
-				ctx = context.WithValue(ctx, authorizationHeaderKey, authorizationHeader)
+				ctx = context.WithValue(ctx, principalAuthorizationHeaderKey, authorizationHeader)
 
 				r = r.WithContext(ctx)
 
@@ -71,8 +71,15 @@ func (c *сlient) WithAuth(next http.Handler) http.Handler {
 	})
 }
 
-func (c *сlient) SetAuthorizationHeader(r *http.Request) {
+// SetAPIKeyAuthorizationHeader convenient method for setting "X-iamcore-API-Key" authentication header with configured API key as a value
+// into the provided request.
+func (c *сlient) SetAPIKeyAuthorizationHeader(r *http.Request) {
 	r.Header.Set(apiKeyHeaderName, c.apiKey)
+}
+
+// GetAPIKeyAuthorizationHeader convenient method that returns "X-iamcore-API-Key" authentication header with configured API key as a value.
+func (c *сlient) GetAPIKeyAuthorizationHeader() http.Header {
+	return http.Header{apiKeyHeaderName: {c.apiKey}}
 }
 
 // PrincipalIRN extracts and returns principal's IRN from the request context.
@@ -115,9 +122,9 @@ func Path(ctx context.Context) (string, error) {
 	return principal.GetPath(), nil
 }
 
-// AuthorizationHeader extracts and returns authorization header from the request context.
-func AuthorizationHeader(ctx context.Context) (http.Header, error) {
-	authorizationHeader, ok := ctx.Value(authorizationHeaderKey).(http.Header)
+// PrincipalAuthorizationHeader extracts and returns principal's authorization header from the request context.
+func PrincipalAuthorizationHeader(ctx context.Context) (http.Header, error) {
+	authorizationHeader, ok := ctx.Value(principalAuthorizationHeaderKey).(http.Header)
 	if !ok {
 		return nil, ErrNoAuthContext
 	}

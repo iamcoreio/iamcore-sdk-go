@@ -8,6 +8,7 @@ import (
 type Client interface {
 	AuthenticationClient
 	AuthorizationClient
+	ResourceManager
 }
 
 type сlient struct {

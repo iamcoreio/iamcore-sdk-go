@@ -12,14 +12,16 @@ import (
 )
 
 const (
-	userIRNPath                = "api/v1/users/me/irn"
-	evaluateOnResources        = "api/v1/evaluate"
-	evaluateOnResourceTypePath = "api/v1/evaluate/resources"
+	userIRNPath                = "/api/v1/users/me/irn"
+	evaluateOnResources        = "/api/v1/evaluate"
+	evaluateOnResourceTypePath = "/api/v1/evaluate/resources"
+	resourcePath               = "/api/v1/resources"
 )
 
 var (
 	ErrUnauthenticated = errors.New("unauthenticated")
 	ErrForbidden       = errors.New("forbidden")
+	ErrConflict        = errors.New("conflict")
 	ErrUnknown         = errors.New("unknown error")
 )
 
@@ -129,8 +131,59 @@ func (c *ServerClient) AuthorizedOnResourceType(ctx context.Context, authorizati
 	return nil, handleServerErrorResponse(response)
 }
 
+func (c *ServerClient) CreateResource(ctx context.Context, authorizationHeader http.Header, createResourceDTO CreateResourceRequestDTO) error {
+	requestDTO, err := json.Marshal(createResourceDTO)
+	if err != nil {
+		return err
+	}
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getURL(resourcePath), bytes.NewReader(requestDTO))
+	if err != nil {
+		return err
+	}
+
+	request.Header = authorizationHeader
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusCreated {
+		return nil
+	}
+
+	return handleServerErrorResponse(response)
+}
+
+func (c *ServerClient) DeleteResource(ctx context.Context, authorizationHeader http.Header, resourceIRN *irn.IRN) error {
+	url := fmt.Sprintf("%s/%s", c.getURL(resourcePath), resourceIRN.Base64())
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
+	if err != nil {
+		return err
+	}
+
+	request.Header = authorizationHeader
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusNoContent {
+		return nil
+	}
+
+	return handleServerErrorResponse(response)
+}
+
 func (c *ServerClient) getURL(path string) string {
-	return fmt.Sprintf("https://%s/%s", c.host, path)
+	return fmt.Sprintf("https://%s%s", c.host, path)
 }
 
 func handleServerErrorResponse(response *http.Response) error {
@@ -144,6 +197,8 @@ func handleServerErrorResponse(response *http.Response) error {
 		return fmt.Errorf("%s: %w", responseDTO.Message, ErrUnauthenticated)
 	case http.StatusForbidden:
 		return fmt.Errorf("%s: %w", responseDTO.Message, ErrForbidden)
+	case http.StatusConflict:
+		return fmt.Errorf("%s: %w", responseDTO.Message, ErrConflict)
 	default:
 		return fmt.Errorf("%s: %w", responseDTO.Message, ErrUnknown)
 	}
