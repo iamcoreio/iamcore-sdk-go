@@ -14,7 +14,7 @@ type ResourceManager interface {
 	// Returns ErrConflict error in case duplicated resource found.
 	// Returns ErrForbidden error in case authenticated principal does not have sufficient permissions to create the resource.
 	// Returns ErrUnknown error in case of unexpected response from iamcore server.
-	CreateResource(ctx context.Context, resourceType, resourcePath, resourceID, tenantID string) error
+	CreateResource(ctx context.Context, tenantID, resourceType, resourcePath, resourceID string) error
 
 	// DeleteResource deletes resource on iamcore using the API key.
 	//
@@ -22,10 +22,10 @@ type ResourceManager interface {
 	// Returns ErrUnauthenticated error in case of unauthenticated access.
 	// Returns ErrForbidden error in case authenticated principal does not have sufficient permissions to delete the resource.
 	// Returns ErrUnknown error in case of unexpected response from iamcore server.
-	DeleteResource(ctx context.Context, resourceType, resourcePath, resourceID, tenantID string) error
+	DeleteResource(ctx context.Context, tenantID, resourceType, resourcePath, resourceID string) error
 }
 
-func (c *сlient) CreateResource(ctx context.Context, resourceType, resourcePath, resourceID, tenantID string) error {
+func (c *сlient) CreateResource(ctx context.Context, tenantID, resourceType, resourcePath, resourceID string) error {
 	if c.disabled {
 		return ErrSDKDisabled
 	}
@@ -45,7 +45,7 @@ func (c *сlient) CreateResource(ctx context.Context, resourceType, resourcePath
 	return c.iamcoreClient.CreateResource(ctx, c.GetAPIKeyAuthorizationHeader(), createResourceRequestDTO)
 }
 
-func (c *сlient) DeleteResource(ctx context.Context, resourceType, resourcePath, resourceID, tenantID string) error {
+func (c *сlient) DeleteResource(ctx context.Context, tenantID, resourceType, resourcePath, resourceID string) error {
 	if c.disabled {
 		return ErrSDKDisabled
 	}
