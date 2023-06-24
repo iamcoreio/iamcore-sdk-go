@@ -13,6 +13,7 @@ type ErrorResponseDTO struct {
 type AuthorizedOnResourceTypeRequestDTO struct {
 	Action       string `json:"action"`
 	ResourceType string `json:"resourceType"`
+	Application  string `json:"application"`
 }
 
 type AuthorizedOnResourceTypeResponseDTO struct {
@@ -26,6 +27,7 @@ type AuthorizedOnResourceListRequestDTO struct {
 
 type CreateResourceRequestDTO struct {
 	Name         string
+	Application  string
 	Path         string
 	ResourceType string
 	Enabled      bool
