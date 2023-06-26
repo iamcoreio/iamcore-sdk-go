@@ -19,7 +19,7 @@ type сlient struct {
 	apiKey string
 }
 
-func NewClient(apiKey, iamcoreHost string, disabled bool) (Client, error) {
+func NewClient(apiKey, serverURL string, disabled bool) (Client, error) {
 	if disabled {
 		log.Println("iamcore SDK is DISABLED")
 
@@ -28,12 +28,12 @@ func NewClient(apiKey, iamcoreHost string, disabled bool) (Client, error) {
 		}, nil
 	}
 
-	options, err := newOptions(apiKey, iamcoreHost)
+	options, err := newOptions(apiKey, serverURL)
 	if err != nil {
 		return nil, err
 	}
 
-	iamcoreClient := NewServerClient(options.iamcoreHost, http.DefaultClient)
+	iamcoreClient := NewServerClient(options.serverURL, http.DefaultClient)
 
 	return &сlient{
 		authenticators: []Authenticator{
