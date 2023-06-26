@@ -26,14 +26,14 @@ var (
 )
 
 type ServerClient struct {
-	host string
+	serverURL string
 
 	httpClient *http.Client
 }
 
-func NewServerClient(host string, httpClient *http.Client) *ServerClient {
+func NewServerClient(serverURL string, httpClient *http.Client) *ServerClient {
 	return &ServerClient{
-		host: host,
+		serverURL: serverURL,
 
 		httpClient: httpClient,
 	}
@@ -186,7 +186,7 @@ func (c *ServerClient) DeleteResource(ctx context.Context, authorizationHeader h
 }
 
 func (c *ServerClient) getURL(path string) string {
-	return fmt.Sprintf("https://%s%s", c.host, path)
+	return fmt.Sprintf("%s%s", c.serverURL, path)
 }
 
 func handleServerErrorResponse(response *http.Response) error {

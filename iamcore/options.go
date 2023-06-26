@@ -8,20 +8,20 @@ import (
 var ErrEmptyAPIKey = errors.New("empty API key")
 
 type Options struct {
-	// iamcoreHost to access the iamcore; "cloud.iamcore.io" by default.
-	iamcoreHost string
+	// serverURL to access the iamcore; "https://cloud.iamcore.io" by default.
+	serverURL string
 	// API key for outbound HTTP requests to secured by iamcore applications or iamcore itself
 	apiKey string
 }
 
 const (
-	apiKeyEnvKey = "API_KEY"
+	apiKeyEnvKey = "IAMCORE_API_KEY" //#nosec
 
-	iamcoreHostEnvKey  = "IAMCORE_HOST"
-	iamcoreDefaultHost = "cloud.iamcore.io"
+	iamcoreURLEnvKey  = "IAMCORE_URL"
+	iamcoreDefaultURL = "https://cloud.iamcore.io"
 )
 
-func newOptions(apiKey, iamcoreHost string) (*Options, error) {
+func newOptions(apiKey, serverURL string) (*Options, error) {
 	if apiKey == "" {
 		apiKey = os.Getenv(apiKeyEnvKey)
 	}
@@ -30,16 +30,16 @@ func newOptions(apiKey, iamcoreHost string) (*Options, error) {
 		return nil, ErrEmptyAPIKey
 	}
 
-	if iamcoreHost == "" {
-		iamcoreHost = os.Getenv(iamcoreHostEnvKey)
+	if serverURL == "" {
+		serverURL = os.Getenv(iamcoreURLEnvKey)
 	}
 
-	if iamcoreHost == "" {
-		iamcoreHost = iamcoreDefaultHost
+	if serverURL == "" {
+		serverURL = iamcoreDefaultURL
 	}
 
 	return &Options{
-		iamcoreHost: iamcoreHost,
-		apiKey:      apiKey,
+		serverURL: serverURL,
+		apiKey:    apiKey,
 	}, nil
 }
