@@ -21,6 +21,12 @@ type AuthenticationClient interface {
 
 	// SetAPIKeyAuthorizationHeader sets "X-iamcore-API-Key" authentication header to HTTP request.
 	SetAPIKeyAuthorizationHeader(r *http.Request)
+
+	// GetAPIKeyAuthorizationHeader convenient method that returns "X-iamcore-API-Key" authentication header with configured API key as a value.
+	GetAPIKeyAuthorizationHeader() http.Header
+
+	// GetPrincipalAuthorizationHeader extracts and returns principal's authorization header from the request context.
+	GetPrincipalAuthorizationHeader(ctx context.Context) (http.Header, error)
 }
 
 // contextKeyType is a context.Context key type.
@@ -82,6 +88,20 @@ func (c *сlient) GetAPIKeyAuthorizationHeader() http.Header {
 	return http.Header{apiKeyHeaderName: {c.apiKey}}
 }
 
+// GetPrincipalAuthorizationHeader extracts and returns principal's authorization header from the request context.
+func (c *сlient) GetPrincipalAuthorizationHeader(ctx context.Context) (http.Header, error) {
+	if c.disabled {
+		return nil, ErrSDKDisabled
+	}
+
+	authorizationHeader, ok := ctx.Value(principalAuthorizationHeaderKey).(http.Header)
+	if !ok {
+		return nil, ErrNoAuthContext
+	}
+
+	return authorizationHeader, nil
+}
+
 // PrincipalIRN extracts and returns principal's IRN from the request context.
 func PrincipalIRN(ctx context.Context) (*irn.IRN, error) {
 	principal, ok := ctx.Value(principalIRNKey).(*irn.IRN)
@@ -120,16 +140,6 @@ func Path(ctx context.Context) (string, error) {
 	}
 
 	return principal.GetPath(), nil
-}
-
-// PrincipalAuthorizationHeader extracts and returns principal's authorization header from the request context.
-func PrincipalAuthorizationHeader(ctx context.Context) (http.Header, error) {
-	authorizationHeader, ok := ctx.Value(principalAuthorizationHeaderKey).(http.Header)
-	if !ok {
-		return nil, ErrNoAuthContext
-	}
-
-	return authorizationHeader, nil
 }
 
 func writeResponseMessage(w http.ResponseWriter, statusCode int, message string) {
