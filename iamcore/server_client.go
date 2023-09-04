@@ -16,6 +16,7 @@ const (
 	evaluateOnResources        = "/api/v1/evaluate"
 	evaluateOnResourceTypePath = "/api/v1/evaluate/resources"
 	resourcePath               = "/api/v1/resources"
+	pageSize                   = 100000
 )
 
 var (
@@ -108,7 +109,9 @@ func (c *ServerClient) AuthorizedOnResourceType(ctx context.Context, authorizati
 		return nil, err
 	}
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getURL(evaluateOnResourceTypePath), bytes.NewReader(requestDTO))
+	url := c.getURL(fmt.Sprintf("%s?pageSize=%d", evaluateOnResourceTypePath, pageSize))
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(requestDTO))
 	if err != nil {
 		return nil, err
 	}
