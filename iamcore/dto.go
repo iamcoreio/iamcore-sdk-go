@@ -14,6 +14,7 @@ type AuthorizedOnResourceTypeRequestDTO struct {
 	Action       string `json:"action"`
 	ResourceType string `json:"resourceType"`
 	Application  string `json:"application"`
+	TenantID     string `json:"tenantID"`
 }
 
 type AuthorizedOnResourceTypeResponseDTO struct {

@@ -185,6 +185,7 @@ linters:
     - wrapcheck
     - asciicheck
     - ireturn
+    - tagliatelle
 
 issues:
 #  # List of regexps of issue texts to exclude, empty list by default.

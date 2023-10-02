@@ -22,12 +22,12 @@ type AuthorizationClient interface {
 	// Returns ErrSDKDisabled error in case SDK is disabled.
 	// Returns ErrUnauthenticated error in case of unauthorized access.
 	// Returns ErrForbidden error in case authenticated principal does not have sufficient permissions to requested resources.
-	Authorize(ctx context.Context, authorizationHeader http.Header, application, resourceType, resourcePath string, resourceIDs []string, action string) (
-		[]string, error)
+	Authorize(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, resourcePath string,
+		resourceIDs []string, action string) ([]string, error)
 }
 
-func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header, application, resourceType, resourcePath string, resourceIDs []string,
-	action string) (
+func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, resourcePath string,
+	resourceIDs []string, action string) (
 	[]string, error,
 ) {
 	if c.disabled {
@@ -35,7 +35,7 @@ func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header
 	}
 
 	if len(resourceIDs) != 0 {
-		resourceIRNs, err := buildResourceIRNs(ctx, application, resourceType, resourcePath, resourceIDs)
+		resourceIRNs, err := buildResourceIRNs(ctx, application, tenantID, resourceType, resourcePath, resourceIDs)
 		if err != nil {
 			return nil, err
 		}
@@ -47,7 +47,7 @@ func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header
 		return resourceIDs, nil
 	}
 
-	resourceIRNs, err := c.iamcoreClient.AuthorizedOnResourceType(ctx, authorizationHeader, application, resourceType, action)
+	resourceIRNs, err := c.iamcoreClient.AuthorizedOnResourceType(ctx, authorizationHeader, tenantID, application, resourceType, action)
 	if err != nil {
 		return nil, err
 	}
@@ -61,15 +61,10 @@ func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header
 	return resourceIDs, nil
 }
 
-func buildResourceIRNs(ctx context.Context, application, resourceType, resourcePath string, resourceIDs []string) ([]*irn.IRN, error) {
+func buildResourceIRNs(ctx context.Context, application, tenantID, resourceType, resourcePath string, resourceIDs []string) ([]*irn.IRN, error) {
 	resourceIRNs := make([]*irn.IRN, len(resourceIDs))
 
 	accountID, err := AccountID(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	tenantID, err := TenantID(ctx)
 	if err != nil {
 		return nil, err
 	}
