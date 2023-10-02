@@ -97,13 +97,14 @@ func (c *ServerClient) AuthorizeOnResources(ctx context.Context, authorizationHe
 	return handleServerErrorResponse(response)
 }
 
-func (c *ServerClient) AuthorizedOnResourceType(ctx context.Context, authorizationHeader http.Header, application, resourceType, action string) (
+func (c *ServerClient) AuthorizedOnResourceType(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, action string) (
 	[]*irn.IRN, error,
 ) {
 	requestDTO, err := json.Marshal(&AuthorizedOnResourceTypeRequestDTO{
 		Action:       action,
 		ResourceType: resourceType,
 		Application:  application,
+		TenantID:     tenantID,
 	})
 	if err != nil {
 		return nil, err
