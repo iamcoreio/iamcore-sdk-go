@@ -100,12 +100,17 @@ func (c *ServerClient) AuthorizeOnResources(ctx context.Context, authorizationHe
 func (c *ServerClient) AuthorizedOnResourceType(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, action string) (
 	[]*irn.IRN, error,
 ) {
-	requestDTO, err := json.Marshal(&AuthorizedOnResourceTypeRequestDTO{
+	authorizedOnResourceTypeRequestDTO := &AuthorizedOnResourceTypeRequestDTO{
 		Action:       action,
 		ResourceType: resourceType,
 		Application:  application,
-		TenantID:     tenantID,
-	})
+	}
+
+	if tenantID != "" {
+		authorizedOnResourceTypeRequestDTO.TenantID = tenantID
+	}
+
+	requestDTO, err := json.Marshal(authorizedOnResourceTypeRequestDTO)
 	if err != nil {
 		return nil, err
 	}
