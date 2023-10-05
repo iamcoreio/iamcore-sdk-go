@@ -39,6 +39,7 @@ func NewClient(apiKey, serverURL string, disabled bool) (Client, error) {
 		authenticators: []Authenticator{
 			NewBearer(iamcoreClient),
 			NewAPIKey(iamcoreClient),
+			NewEmptyHeader(iamcoreClient),
 		},
 		iamcoreClient: iamcoreClient,
 		disabled:      false,

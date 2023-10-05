@@ -47,7 +47,7 @@ func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header
 		return resourceIDs, nil
 	}
 
-	resourceIRNs, err := c.iamcoreClient.AuthorizedOnResourceType(ctx, authorizationHeader, tenantID, application, resourceType, action)
+	resourceIRNs, err := c.iamcoreClient.AuthorizedOnResourceType(ctx, authorizationHeader, application, tenantID, resourceType, action)
 	if err != nil {
 		return nil, err
 	}
