@@ -22,8 +22,25 @@ type AuthorizationClient interface {
 	// Returns ErrSDKDisabled error in case SDK is disabled.
 	// Returns ErrUnauthenticated error in case of unauthorized access.
 	// Returns ErrForbidden error in case authenticated principal does not have sufficient permissions to requested resources.
+	// Returns ErrBadRequest error in case of invalid request.
 	Authorize(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType, resourcePath string,
 		resourceIDs []string, action string) ([]string, error)
+
+	// AuthorizationDBQueryFilter retrieves the authorization query filter by database engine.
+	//
+	// Returns ErrSDKDisabled error in case SDK is disabled.
+	// Returns ErrUnauthenticated error in case of unauthorized access.
+	// Returns ErrForbidden error in case authenticated principal does not have sufficient permissions to any resources.
+	// Returns ErrBadRequest error in case of invalid request.
+	AuthorizationDBQueryFilter(ctx context.Context, authorizationHeader http.Header, action, database string) (string, error)
+
+	// EvaluateActionsOnIRNs evaluates a list of actions against a list of IRNs and returns a map
+	// associating each action with its corresponding permitted and prohibited IRNs matching requested IRNs.
+	//
+	// Returns ErrSDKDisabled error in case SDK is disabled.
+	// Returns ErrUnauthenticated error in case of unauthorized access.
+	// Returns ErrBadRequest error in case of invalid request.
+	EvaluateActionsOnIRNs(ctx context.Context, authorizationHeader http.Header, actions []string, irns []*irn.IRN) (map[string]*AllowedAndDeniedIRNs, error)
 }
 
 func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType,
@@ -59,6 +76,24 @@ func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header
 	}
 
 	return resourceIDs, nil
+}
+
+func (c *сlient) AuthorizationDBQueryFilter(ctx context.Context, authorizationHeader http.Header, action, database string) (string, error) {
+	if c.disabled {
+		return "", ErrSDKDisabled
+	}
+
+	return c.iamcoreClient.AuthorizationDBQueryFilter(ctx, authorizationHeader, action, database)
+}
+
+func (c *сlient) EvaluateActionsOnIRNs(ctx context.Context, authorizationHeader http.Header, actions []string, irns []*irn.IRN) (
+	map[string]*AllowedAndDeniedIRNs, error,
+) {
+	if c.disabled {
+		return nil, ErrSDKDisabled
+	}
+
+	return c.iamcoreClient.EvaluateActionsOnIRNs(ctx, authorizationHeader, actions, irns)
 }
 
 func buildResourceIRNs(accountID, application, tenantID, resourceType, resourcePath string, resourceIDs []string) ([]*irn.IRN, error) {
