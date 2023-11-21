@@ -13,9 +13,12 @@ import (
 
 const (
 	userIRNPath                = "/api/v1/users/me/irn"
-	evaluateOnResources        = "/api/v1/evaluate"
-	evaluateOnResourceTypePath = "/api/v1/evaluate/resources"
 	resourcePath               = "/api/v1/resources"
+	applicationPath            = "/api/v1/applications"
+	evaluatePath               = "/api/v1/evaluate"
+	evaluateOnResourceTypePath = evaluatePath + "/resources"
+	evaluateActionsOnIRNsPath  = evaluatePath + "/irns/actions"
+	evaluateDBQueryFilterPath  = evaluatePath + "/database-query-filter"
 	pageSize                   = 100000
 )
 
@@ -23,6 +26,7 @@ var (
 	ErrUnauthenticated = errors.New("unauthenticated")
 	ErrForbidden       = errors.New("forbidden")
 	ErrConflict        = errors.New("conflict")
+	ErrBadRequest      = errors.New("bad request")
 	ErrUnknown         = errors.New("unknown error")
 )
 
@@ -76,7 +80,7 @@ func (c *ServerClient) AuthorizeOnResources(ctx context.Context, authorizationHe
 		return err
 	}
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getURL(evaluateOnResources), bytes.NewReader(requestDTO))
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getURL(evaluatePath), bytes.NewReader(requestDTO))
 	if err != nil {
 		return err
 	}
@@ -194,6 +198,152 @@ func (c *ServerClient) DeleteResource(ctx context.Context, authorizationHeader h
 	return handleServerErrorResponse(response)
 }
 
+func (c *ServerClient) CreateResourceType(ctx context.Context, authorizationHeader http.Header,
+	applicationIRN *irn.IRN, createDTO *CreateResourceTypeRequestDTO,
+) error {
+	url := c.getURL(fmt.Sprintf("%s/%s/resource-types", applicationPath, applicationIRN.Base64()))
+
+	if createDTO.Operations == nil {
+		createDTO.Operations = make([]string, 0)
+	}
+
+	requestDTO, err := json.Marshal(createDTO)
+	if err != nil {
+		return err
+	}
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(requestDTO))
+	if err != nil {
+		return err
+	}
+
+	request.Header = authorizationHeader
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusCreated {
+		return nil
+	}
+
+	return handleServerErrorResponse(response)
+}
+
+func (c *ServerClient) GetResourceTypes(ctx context.Context, authorizationHeader http.Header, applicationIRN *irn.IRN) ([]*ResourceTypeResponseDTO, error) {
+	url := c.getURL(fmt.Sprintf("%s/%s/resource-types?pageSize=%d", applicationPath, applicationIRN.Base64(), pageSize))
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	request.Header = authorizationHeader
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusOK {
+		var responseDTO struct {
+			Data []*ResourceTypeResponseDTO `json:"data"`
+		}
+
+		if err = json.NewDecoder(response.Body).Decode(&responseDTO); err != nil {
+			return nil, err
+		}
+
+		return responseDTO.Data, nil
+	}
+
+	return nil, handleServerErrorResponse(response)
+}
+
+func (c *ServerClient) EvaluateActionsOnIRNs(ctx context.Context, authorizationHeader http.Header, actions []string, irns []*irn.IRN) (
+	map[string]*AllowedAndDeniedIRNs, error,
+) {
+	evaluateActionsRequestDTO := &EvaluateActionsOnIRNsRequestDTO{
+		IRNs:    irns,
+		Actions: actions,
+	}
+
+	requestDTO, err := json.Marshal(evaluateActionsRequestDTO)
+	if err != nil {
+		return nil, err
+	}
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getURL(evaluateActionsOnIRNsPath), bytes.NewReader(requestDTO))
+	if err != nil {
+		return nil, err
+	}
+
+	request.Header = authorizationHeader
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusOK {
+		responseDTO := map[string]*AllowedAndDeniedIRNs{}
+		if err = json.NewDecoder(response.Body).Decode(&responseDTO); err != nil {
+			return nil, err
+		}
+
+		return responseDTO, nil
+	}
+
+	return nil, handleServerErrorResponse(response)
+}
+
+func (c *ServerClient) AuthorizationDBQueryFilter(ctx context.Context, authorizationHeader http.Header, action, database string) (string, error) {
+	queryFilterRequestDTO := &QueryFilterOnEvaluatedResourcesRequestDTO{
+		Action:   action,
+		Database: database,
+	}
+
+	requestDTO, err := json.Marshal(queryFilterRequestDTO)
+	if err != nil {
+		return "", err
+	}
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getURL(evaluateDBQueryFilterPath), bytes.NewReader(requestDTO))
+	if err != nil {
+		return "", err
+	}
+
+	request.Header = authorizationHeader
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return "", err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusOK {
+		var responseDTO struct {
+			Data string `json:"data"`
+		}
+
+		if err = json.NewDecoder(response.Body).Decode(&responseDTO); err != nil {
+			return "", err
+		}
+
+		return responseDTO.Data, nil
+	}
+
+	return "", handleServerErrorResponse(response)
+}
+
 func (c *ServerClient) getURL(path string) string {
 	return fmt.Sprintf("%s%s", c.serverURL, path)
 }
@@ -211,6 +361,8 @@ func handleServerErrorResponse(response *http.Response) error {
 		return fmt.Errorf("%s: %w", responseDTO.Message, ErrForbidden)
 	case http.StatusConflict:
 		return fmt.Errorf("%s: %w", responseDTO.Message, ErrConflict)
+	case http.StatusBadRequest:
+		return fmt.Errorf("%s: %w", responseDTO.Message, ErrBadRequest)
 	default:
 		return fmt.Errorf("%s: %w", responseDTO.Message, ErrUnknown)
 	}
