@@ -102,7 +102,7 @@ func (c *сlient) CreateResourceType(ctx context.Context, authorizationHeader ht
 	requestDTO := &CreateResourceTypeRequestDTO{
 		Type:         resourceType,
 		ActionPrefix: actionPrefix,
-		Operations:   operations,
+		Operations:   dropEmptyStrings(operations),
 	}
 
 	return c.iamcoreClient.CreateResourceType(ctx, authorizationHeader, applicationIRN, requestDTO)
@@ -119,4 +119,21 @@ func (c *сlient) GetResourceTypes(ctx context.Context, authorizationHeader http
 	}
 
 	return c.iamcoreClient.GetResourceTypes(ctx, authorizationHeader, applicationIRN)
+}
+
+// dropEmptyStrings filters a slice to only non-empty strings
+func dropEmptyStrings(in []string) []string {
+	out := make([]string, 0)
+
+	if in == nil {
+		return out
+	}
+
+	for i := range in {
+		if in[i] != "" {
+			out = append(out, in[i])
+		}
+	}
+
+	return out
 }

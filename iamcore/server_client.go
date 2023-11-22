@@ -203,10 +203,6 @@ func (c *ServerClient) CreateResourceType(ctx context.Context, authorizationHead
 ) error {
 	url := c.getURL(fmt.Sprintf("%s/%s/resource-types", applicationPath, applicationIRN.Base64()))
 
-	if createDTO.Operations == nil {
-		createDTO.Operations = make([]string, 0)
-	}
-
 	requestDTO, err := json.Marshal(createDTO)
 	if err != nil {
 		return err
