@@ -1,4 +1,4 @@
-variables:
+variables: 
   GO_SOURCES_DIR: ./iamcore
 
 include:
