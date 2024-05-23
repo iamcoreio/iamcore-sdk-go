@@ -41,6 +41,21 @@ type AuthorizationClient interface {
 	// Returns ErrUnauthenticated error in case of unauthorized access.
 	// Returns ErrBadRequest error in case of invalid request.
 	EvaluateActionsOnIRNs(ctx context.Context, authorizationHeader http.Header, actions []string, irns []*irn.IRN) (map[string]*AllowedAndDeniedIRNs, error)
+
+	// FilterAuthorizedResources returns resources to which user has ALL the requested actions granted.
+	//
+	// If the requested resources is empty, the function will return resources having specified resource type to which user has ALL the requested actions granted.
+	// If the requested resources is not empty, the function will return requested resources if user has ALL the requested actions granted on ALL resources.
+	//
+	// Neither passed resources nor actions can contain wildcards.
+	// All the resources must have the same type.
+	//
+	// Returns ErrSDKDisabled error in case SDK is disabled.
+	// Returns ErrUnauthenticated error in case of unauthorized access.
+	// Returns ErrForbidden error in case authenticated principal does not have sufficient permissions to requested resources.
+	// Returns ErrBadRequest error in case of invalid request.
+	FilterAuthorizedResources(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType, resourcePath string,
+		resourceIDs []string, action string) ([]string, error)
 }
 
 func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType,
@@ -69,13 +84,28 @@ func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header
 		return nil, err
 	}
 
-	resourceIDs = make([]string, len(resourceIRNs))
+	return getResourceIDs(resourceIRNs), nil
+}
 
-	for i := range resourceIRNs {
-		resourceIDs[i] = resourceIRNs[i].GetResourceID()
+func (c *сlient) FilterAuthorizedResources(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType,
+	resourcePath string, resourceIDs []string, action string) (
+	[]string, error,
+) {
+	if c.disabled {
+		return nil, ErrSDKDisabled
 	}
 
-	return resourceIDs, nil
+	resourceIRNs, err := buildResourceIRNs(accountID, application, tenantID, resourceType, resourcePath, resourceIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	authorizedResources, err := c.iamcoreClient.FilterAuthorizedResources(ctx, authorizationHeader, action, resourceIRNs)
+	if err != nil {
+		return nil, err
+	}
+
+	return getResourceIDs(authorizedResources), nil
 }
 
 func (c *сlient) AuthorizationDBQueryFilter(ctx context.Context, authorizationHeader http.Header, action, database string) (string, error) {
@@ -109,4 +139,14 @@ func buildResourceIRNs(accountID, application, tenantID, resourceType, resourceP
 	}
 
 	return resourceIRNs, nil
+}
+
+func getResourceIDs(resourceIRNs []*irn.IRN) []string {
+	resourceIDs := make([]string, len(resourceIRNs))
+
+	for i := range resourceIRNs {
+		resourceIDs[i] = resourceIRNs[i].GetResourceID()
+	}
+
+	return resourceIDs
 }

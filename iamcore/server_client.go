@@ -101,6 +101,44 @@ func (c *ServerClient) AuthorizeOnResources(ctx context.Context, authorizationHe
 	return handleServerErrorResponse(response)
 }
 
+func (c *ServerClient) FilterAuthorizedResources(ctx context.Context, authorizationHeader http.Header, action string, resources []*irn.IRN) (
+	authorizedResources []*irn.IRN, err error,
+) {
+	requestDTO, err := json.Marshal(&AuthorizedOnResourceListRequestDTO{
+		Action:    action,
+		Resources: resources,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	url := c.getURL(fmt.Sprintf("%s?filterResources=%t", evaluatePath, true))
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(requestDTO))
+	if err != nil {
+		return nil, err
+	}
+
+	request.Header = authorizationHeader
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusOK {
+		if err = json.NewDecoder(response.Body).Decode(&authorizedResources); err != nil {
+			return nil, err
+		}
+
+		return authorizedResources, nil
+	}
+
+	return nil, handleServerErrorResponse(response)
+}
+
 func (c *ServerClient) AuthorizedOnResourceType(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, action string) (
 	[]*irn.IRN, error,
 ) {
