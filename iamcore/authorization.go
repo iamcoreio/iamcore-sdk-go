@@ -47,7 +47,7 @@ type AuthorizationClient interface {
 	// Neither passed resources nor action can contain wildcards.
 	// All the resources must have the same type.
 	//
-	// Returns ErrSecurityDisabled error in case SDK is disabled.
+	// Returns ErrSDKDisabled error in case SDK is disabled.
 	// Returns ErrUnauthenticated error in case of unauthorized access.
 	// Returns ErrBadRequest error in case of invalid request.
 	FilterAuthorizedResources(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType, resourcePath string,
