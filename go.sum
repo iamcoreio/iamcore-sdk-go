@@ -2,3 +2,5 @@ github.com/mitchellh/mapstructure v1.5.0 h1:jeMsZIYE/09sWLaz43PL7Gy6RuMjD2eJVyua
 github.com/mitchellh/mapstructure v1.5.0/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RRV2QTWOzhPopBRo=
 gitlab.kaaiot.net/core/lib/iamcore/irn.git v0.0.0-20230302225833-2b0b234e558e h1:n6upCiET853l8ukzJGpWSaeT0/8GEQFIqKBwQqM2kkI=
 gitlab.kaaiot.net/core/lib/iamcore/irn.git v0.0.0-20230302225833-2b0b234e558e/go.mod h1:50GD6Qqb9tCuQTVobvVCyrvI+yMxzhoGg/Smo4xiQZE=
+gitlab.kaaiot.net/core/lib/iamcore/irn.git v0.0.0-20240524070936-4dcc543e8828 h1:ZO5TsI6dgMxS1tCEE/RQU7JEz3RD7NNqxFOd9Gch9gc=
+gitlab.kaaiot.net/core/lib/iamcore/irn.git v0.0.0-20240524070936-4dcc543e8828/go.mod h1:50GD6Qqb9tCuQTVobvVCyrvI+yMxzhoGg/Smo4xiQZE=
