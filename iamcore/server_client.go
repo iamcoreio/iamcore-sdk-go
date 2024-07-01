@@ -14,6 +14,7 @@ import (
 const (
 	userIRNPath                = "/api/v1/users/me/irn"
 	resourcePath               = "/api/v1/resources"
+	resourceEvaluatePath       = "/api/v1/resources"
 	applicationPath            = "/api/v1/applications"
 	evaluatePath               = "/api/v1/evaluate"
 	evaluateOnResourceTypePath = evaluatePath + "/resources"
@@ -72,6 +73,14 @@ func (c *ServerClient) GetPrincipalIRN(ctx context.Context, authorizationHeader 
 }
 
 func (c *ServerClient) AuthorizeOnResources(ctx context.Context, authorizationHeader http.Header, action string, resources []*irn.IRN) error {
+	return c.authorize(ctx, evaluatePath, authorizationHeader, action, resources)
+}
+
+func (c *ServerClient) AuthorizeResources(ctx context.Context, authorizationHeader http.Header, action string, resources []*irn.IRN) error {
+	return c.authorize(ctx, resourceEvaluatePath, authorizationHeader, action, resources)
+}
+
+func (c *ServerClient) authorize(ctx context.Context, url string, authorizationHeader http.Header, action string, resources []*irn.IRN) error {
 	requestDTO, err := json.Marshal(&AuthorizedOnResourceListRequestDTO{
 		Action:    action,
 		Resources: resources,
@@ -80,7 +89,7 @@ func (c *ServerClient) AuthorizeOnResources(ctx context.Context, authorizationHe
 		return err
 	}
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getURL(evaluatePath), bytes.NewReader(requestDTO))
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getURL(url), bytes.NewReader(requestDTO))
 	if err != nil {
 		return err
 	}
