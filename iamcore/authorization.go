@@ -30,13 +30,13 @@ type AuthorizationClient interface {
 	//
 	// If the requested resources is empty, the function will return resources having specified resource type to which user has ALL the requested actions granted.
 	// If the requested resources is not empty, the function will return requested resources if user has ALL the requested actions granted on ALL resources.
-	// If the requested resources do not exist in iamcore, the function will return ErrForbidden.
 	//
 	// Neither passed resources nor actions can contain wildcards.
 	// All the resources must have the same type.
 	//
 	// Returns ErrSDKDisabled error in case SDK is disabled.
 	// Returns ErrUnauthenticated error in case of unauthorized access.
+	// Returns ErrNotFound error in case of requested resources do not exist in iamcore.
 	// Returns ErrForbidden error in case authenticated principal does not have sufficient permissions to requested resources.
 	// Returns ErrBadRequest error in case of invalid request.
 	AuthorizeResources(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType, resourcePath string,
