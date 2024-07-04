@@ -26,6 +26,33 @@ type AuthorizationClient interface {
 	Authorize(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType, resourcePath string,
 		resourceIDs []string, action string) ([]string, error)
 
+	// AuthorizeResources returns existing iamcore resources to which user has ALL the requested actions granted.
+	//
+	// If the requested resources is empty, the function will return resources having specified resource type to which user has ALL the requested actions granted.
+	// If the requested resources is not empty, the function will return requested resources if user has ALL the requested actions granted on ALL resources.
+	//
+	// Neither passed resources nor actions can contain wildcards.
+	// All the resources must have the same type.
+	//
+	// Returns ErrSDKDisabled error in case SDK is disabled.
+	// Returns ErrUnauthenticated error in case of unauthorized access.
+	// Returns ErrNotFound error in case of requested resources do not exist in iamcore.
+	// Returns ErrForbidden error in case authenticated principal does not have sufficient permissions to requested resources.
+	// Returns ErrBadRequest error in case of invalid request.
+	AuthorizeResources(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType, resourcePath string,
+		resourceIDs []string, action string) ([]string, error)
+
+	// FilterAuthorizedResources filters the list of resources and returns a subset, to which user has the requested action granted within the specified tenant.
+	//
+	// Neither passed resources nor action can contain wildcards.
+	// All the resources must have the same type.
+	//
+	// Returns ErrSDKDisabled error in case SDK is disabled.
+	// Returns ErrUnauthenticated error in case of unauthorized access.
+	// Returns ErrBadRequest error in case of invalid request.
+	FilterAuthorizedResources(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType, resourcePath string,
+		resourceIDs []string, action string) ([]string, error)
+
 	// AuthorizationDBQueryFilter retrieves the authorization query filter by database engine.
 	//
 	// Returns ErrSDKDisabled error in case SDK is disabled.
@@ -41,21 +68,28 @@ type AuthorizationClient interface {
 	// Returns ErrUnauthenticated error in case of unauthorized access.
 	// Returns ErrBadRequest error in case of invalid request.
 	EvaluateActionsOnIRNs(ctx context.Context, authorizationHeader http.Header, actions []string, irns []*irn.IRN) (map[string]*AllowedAndDeniedIRNs, error)
-
-	// FilterAuthorizedResources filters the list of resources and returns a subset, to which user has the requested action granted within the specified tenant.
-	//
-	// Neither passed resources nor action can contain wildcards.
-	// All the resources must have the same type.
-	//
-	// Returns ErrSDKDisabled error in case SDK is disabled.
-	// Returns ErrUnauthenticated error in case of unauthorized access.
-	// Returns ErrBadRequest error in case of invalid request.
-	FilterAuthorizedResources(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType, resourcePath string,
-		resourceIDs []string, action string) ([]string, error)
 }
 
-func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType,
-	resourcePath string, resourceIDs []string, action string) (
+func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header, accountID, application,
+	tenantID, resourceType, resourcePath string, resourceIDs []string, action string) (
+	[]string, error,
+) {
+	return c.authorize(ctx, authorizationHeader, accountID, application, tenantID,
+		resourceType, resourcePath, resourceIDs, action, c.iamcoreClient.AuthorizeOnIRNs)
+}
+
+func (c *сlient) AuthorizeResources(ctx context.Context, authorizationHeader http.Header, accountID, application,
+	tenantID, resourceType, resourcePath string, resourceIDs []string, action string) (
+	[]string, error,
+) {
+	return c.authorize(ctx, authorizationHeader, accountID, application, tenantID,
+		resourceType, resourcePath, resourceIDs, action, c.iamcoreClient.AuthorizeOnResources)
+}
+
+type AuthorizationFunction func(ctx context.Context, authorizationHeader http.Header, action string, resources []*irn.IRN) error
+
+func (c *сlient) authorize(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType,
+	resourcePath string, resourceIDs []string, action string, function AuthorizationFunction) (
 	[]string, error,
 ) {
 	if c.disabled {
@@ -68,7 +102,7 @@ func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header
 			return nil, err
 		}
 
-		if err = c.iamcoreClient.AuthorizeOnResources(ctx, authorizationHeader, action, resourceIRNs); err != nil {
+		if err = function(ctx, authorizationHeader, action, resourceIRNs); err != nil {
 			return nil, err
 		}
 

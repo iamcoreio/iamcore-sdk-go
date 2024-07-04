@@ -14,6 +14,7 @@ import (
 const (
 	userIRNPath                = "/api/v1/users/me/irn"
 	resourcePath               = "/api/v1/resources"
+	resourceEvaluatePath       = "/api/v1/resources/evaluate"
 	applicationPath            = "/api/v1/applications"
 	evaluatePath               = "/api/v1/evaluate"
 	evaluateOnResourceTypePath = evaluatePath + "/resources"
@@ -24,6 +25,7 @@ const (
 
 var (
 	ErrUnauthenticated = errors.New("unauthenticated")
+	ErrNotFound        = errors.New("not found")
 	ErrForbidden       = errors.New("forbidden")
 	ErrConflict        = errors.New("conflict")
 	ErrBadRequest      = errors.New("bad request")
@@ -71,38 +73,28 @@ func (c *ServerClient) GetPrincipalIRN(ctx context.Context, authorizationHeader 
 	return nil, handleServerErrorResponse(response)
 }
 
-func (c *ServerClient) AuthorizeOnResources(ctx context.Context, authorizationHeader http.Header, action string, resources []*irn.IRN) error {
-	requestDTO, err := json.Marshal(&AuthorizedOnResourceListRequestDTO{
-		Action:    action,
-		Resources: resources,
-	})
-	if err != nil {
-		return err
-	}
+func (c *ServerClient) AuthorizeOnIRNs(ctx context.Context, authorizationHeader http.Header, action string, resources []*irn.IRN) error {
+	_, err := c.authorize(ctx, evaluatePath, authorizationHeader, action, resources, false)
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getURL(evaluatePath), bytes.NewReader(requestDTO))
-	if err != nil {
-		return err
-	}
-
-	request.Header = authorizationHeader
-
-	response, err := c.httpClient.Do(request)
-	if err != nil {
-		return err
-	}
-
-	defer response.Body.Close()
-
-	if response.StatusCode == http.StatusOK {
-		return nil
-	}
-
-	return handleServerErrorResponse(response)
+	return err
 }
 
-func (c *ServerClient) FilterAuthorizedResources(ctx context.Context, authorizationHeader http.Header, action string, resources []*irn.IRN) (
-	authorizedResources []*irn.IRN, err error,
+func (c *ServerClient) AuthorizeOnResources(ctx context.Context, authorizationHeader http.Header, action string, resources []*irn.IRN) error {
+	_, err := c.authorize(ctx, resourceEvaluatePath, authorizationHeader, action, resources, false)
+
+	return err
+}
+
+func (c *ServerClient) FilterAuthorizedResources(ctx context.Context, authorizationHeader http.Header,
+	action string, resources []*irn.IRN) (
+	[]*irn.IRN, error,
+) {
+	return c.authorize(ctx, evaluatePath, authorizationHeader, action, resources, true)
+}
+
+func (c *ServerClient) authorize(ctx context.Context, path string, authorizationHeader http.Header,
+	action string, resources []*irn.IRN, isFilterResources bool) (
+	[]*irn.IRN, error,
 ) {
 	requestDTO, err := json.Marshal(&AuthorizedOnResourceListRequestDTO{
 		Action:    action,
@@ -112,7 +104,11 @@ func (c *ServerClient) FilterAuthorizedResources(ctx context.Context, authorizat
 		return nil, err
 	}
 
-	url := c.getURL(fmt.Sprintf("%s?filterResources=%t", evaluatePath, true))
+	url := c.getURL(path)
+
+	if isFilterResources {
+		url += "?filterResources=true"
+	}
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(requestDTO))
 	if err != nil {
@@ -129,6 +125,7 @@ func (c *ServerClient) FilterAuthorizedResources(ctx context.Context, authorizat
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusOK {
+		authorizedResources := make([]*irn.IRN, 0)
 		if err = json.NewDecoder(response.Body).Decode(&authorizedResources); err != nil {
 			return nil, err
 		}
@@ -395,6 +392,8 @@ func handleServerErrorResponse(response *http.Response) error {
 		return fmt.Errorf("%s: %w", responseDTO.Message, ErrForbidden)
 	case http.StatusConflict:
 		return fmt.Errorf("%s: %w", responseDTO.Message, ErrConflict)
+	case http.StatusNotFound:
+		return fmt.Errorf("%s: %w", responseDTO.Message, ErrNotFound)
 	case http.StatusBadRequest:
 		return fmt.Errorf("%s: %w", responseDTO.Message, ErrBadRequest)
 	default:
