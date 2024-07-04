@@ -73,13 +73,13 @@ func (c *ServerClient) GetPrincipalIRN(ctx context.Context, authorizationHeader 
 	return nil, handleServerErrorResponse(response)
 }
 
-func (c *ServerClient) AuthorizeOnResources(ctx context.Context, authorizationHeader http.Header, action string, resources []*irn.IRN) error {
+func (c *ServerClient) AuthorizeOnIRNs(ctx context.Context, authorizationHeader http.Header, action string, resources []*irn.IRN) error {
 	_, err := c.authorize(ctx, evaluatePath, authorizationHeader, action, resources, false)
 
 	return err
 }
 
-func (c *ServerClient) AuthorizeResources(ctx context.Context, authorizationHeader http.Header, action string, resources []*irn.IRN) error {
+func (c *ServerClient) AuthorizeOnResources(ctx context.Context, authorizationHeader http.Header, action string, resources []*irn.IRN) error {
 	_, err := c.authorize(ctx, resourceEvaluatePath, authorizationHeader, action, resources, false)
 
 	return err
@@ -131,15 +131,6 @@ func (c *ServerClient) authorize(ctx context.Context, path string, authorization
 		}
 
 		return authorizedResources, nil
-	}
-
-	if response.StatusCode == http.StatusNotFound {
-		nonExistingResources := make([]*irn.IRN, 0)
-		if err = json.NewDecoder(response.Body).Decode(&nonExistingResources); err != nil {
-			return nil, err
-		}
-
-		return nil, fmt.Errorf("resources not found in iamcore %v: %w", nonExistingResources, ErrNotFound)
 	}
 
 	return nil, handleServerErrorResponse(response)
@@ -401,6 +392,8 @@ func handleServerErrorResponse(response *http.Response) error {
 		return fmt.Errorf("%s: %w", responseDTO.Message, ErrForbidden)
 	case http.StatusConflict:
 		return fmt.Errorf("%s: %w", responseDTO.Message, ErrConflict)
+	case http.StatusNotFound:
+		return fmt.Errorf("%s: %w", responseDTO.Message, ErrNotFound)
 	case http.StatusBadRequest:
 		return fmt.Errorf("%s: %w", responseDTO.Message, ErrBadRequest)
 	default:

@@ -42,6 +42,17 @@ type AuthorizationClient interface {
 	AuthorizeResources(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType, resourcePath string,
 		resourceIDs []string, action string) ([]string, error)
 
+	// FilterAuthorizedResources filters the list of resources and returns a subset, to which user has the requested action granted within the specified tenant.
+	//
+	// Neither passed resources nor action can contain wildcards.
+	// All the resources must have the same type.
+	//
+	// Returns ErrSDKDisabled error in case SDK is disabled.
+	// Returns ErrUnauthenticated error in case of unauthorized access.
+	// Returns ErrBadRequest error in case of invalid request.
+	FilterAuthorizedResources(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType, resourcePath string,
+		resourceIDs []string, action string) ([]string, error)
+
 	// AuthorizationDBQueryFilter retrieves the authorization query filter by database engine.
 	//
 	// Returns ErrSDKDisabled error in case SDK is disabled.
@@ -57,17 +68,22 @@ type AuthorizationClient interface {
 	// Returns ErrUnauthenticated error in case of unauthorized access.
 	// Returns ErrBadRequest error in case of invalid request.
 	EvaluateActionsOnIRNs(ctx context.Context, authorizationHeader http.Header, actions []string, irns []*irn.IRN) (map[string]*AllowedAndDeniedIRNs, error)
+}
 
-	// FilterAuthorizedResources filters the list of resources and returns a subset, to which user has the requested action granted within the specified tenant.
-	//
-	// Neither passed resources nor action can contain wildcards.
-	// All the resources must have the same type.
-	//
-	// Returns ErrSDKDisabled error in case SDK is disabled.
-	// Returns ErrUnauthenticated error in case of unauthorized access.
-	// Returns ErrBadRequest error in case of invalid request.
-	FilterAuthorizedResources(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType, resourcePath string,
-		resourceIDs []string, action string) ([]string, error)
+func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header, accountID, application,
+	tenantID, resourceType, resourcePath string, resourceIDs []string, action string) (
+	[]string, error,
+) {
+	return c.authorize(ctx, authorizationHeader, accountID, application, tenantID,
+		resourceType, resourcePath, resourceIDs, action, c.iamcoreClient.AuthorizeOnIRNs)
+}
+
+func (c *сlient) AuthorizeResources(ctx context.Context, authorizationHeader http.Header, accountID, application,
+	tenantID, resourceType, resourcePath string, resourceIDs []string, action string) (
+	[]string, error,
+) {
+	return c.authorize(ctx, authorizationHeader, accountID, application, tenantID,
+		resourceType, resourcePath, resourceIDs, action, c.iamcoreClient.AuthorizeOnResources)
 }
 
 type AuthorizationFunction func(ctx context.Context, authorizationHeader http.Header, action string, resources []*irn.IRN) error
@@ -99,22 +115,6 @@ func (c *сlient) authorize(ctx context.Context, authorizationHeader http.Header
 	}
 
 	return getResourceIDs(resourceIRNs), nil
-}
-
-func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header, accountID, application,
-	tenantID, resourceType, resourcePath string, resourceIDs []string, action string) (
-	[]string, error,
-) {
-	return c.authorize(ctx, authorizationHeader, accountID, application, tenantID,
-		resourceType, resourcePath, resourceIDs, action, c.iamcoreClient.AuthorizeOnResources)
-}
-
-func (c *сlient) AuthorizeResources(ctx context.Context, authorizationHeader http.Header, accountID, application,
-	tenantID, resourceType, resourcePath string, resourceIDs []string, action string) (
-	[]string, error,
-) {
-	return c.authorize(ctx, authorizationHeader, accountID, application, tenantID,
-		resourceType, resourcePath, resourceIDs, action, c.iamcoreClient.AuthorizeResources)
 }
 
 func (c *сlient) FilterAuthorizedResources(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType,
