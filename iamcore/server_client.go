@@ -17,6 +17,7 @@ const (
 	resourceEvaluatePath       = "/api/v1/resources/evaluate"
 	applicationPath            = "/api/v1/applications"
 	evaluatePath               = "/api/v1/evaluate"
+	userPath                   = "/api/v1/users"
 	evaluateOnResourceTypePath = evaluatePath + "/resources"
 	evaluateActionsOnIRNsPath  = evaluatePath + "/irns/actions"
 	evaluateDBQueryFilterPath  = evaluatePath + "/database-query-filter"
@@ -373,6 +374,39 @@ func (c *ServerClient) AuthorizationDBQueryFilter(ctx context.Context, authoriza
 	}
 
 	return "", handleServerErrorResponse(response)
+}
+
+func (c *ServerClient) AttachUserToPolicy(ctx context.Context, authorizationHeader http.Header, userIRN, policyIRN *irn.IRN) error {
+	queryFilterRequestDTO := &AttachPolicyRequestDTO{
+		PolicyIDs: []string{policyIRN.Base64()},
+	}
+
+	requestDTO, err := json.Marshal(queryFilterRequestDTO)
+	if err != nil {
+		return err
+	}
+
+	url := c.getURL(fmt.Sprintf(userPath+"/%s/policies/attach", userIRN.Base64()))
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(requestDTO))
+	if err != nil {
+		return err
+	}
+
+	request.Header = authorizationHeader
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusNoContent {
+		return handleServerErrorResponse(response)
+	}
+
+	return nil
 }
 
 func (c *ServerClient) getURL(path string) string {
