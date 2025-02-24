@@ -67,6 +67,10 @@ type QueryFilterOnEvaluatedResourcesRequestDTO struct {
 	Database string `json:"database"`
 }
 
+type AttachPolicyRequestDTO struct {
+	PolicyIDs []string `json:"policyIDs"`
+}
+
 type AllowedAndDeniedIRNs struct {
 	Allowed []*irn.IRN
 	Denied  []*irn.IRN
