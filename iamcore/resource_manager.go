@@ -45,14 +45,14 @@ type ResourceManager interface {
 	// Returns ErrUnknown error in case of unexpected response from iamcore server.
 	GetResourceTypes(ctx context.Context, authorizationHeader http.Header, accountID, application string) ([]*ResourceTypeResponseDTO, error)
 
-	// AttachPrincipalToPolicy attaches authenticated principal to policy.
+	// AttachUserToPolicy attaches authenticated principal to policy.
 	//
 	// Returns ErrSDKDisabled error in case SDK is disabled.
 	// Returns ErrUnauthenticated error in case of unauthenticated access.
 	// Returns ErrForbidden error in case authenticated principal does not have sufficient permissions to read resource types.
 	// Returns ErrBadRequest error in case of invalid request.
 	// Returns ErrUnknown error in case of unexpected response from iamcore server.
-	AttachPrincipalToPolicy(ctx context.Context, authorizationHeader http.Header, application, tenantID, policyID string) error
+	AttachUserToPolicy(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, policyID string, userIRN *irn.IRN) error
 }
 
 func (c *сlient) CreateResource(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, resourcePath, resourceID string,
@@ -96,22 +96,17 @@ func (c *сlient) DeleteResource(ctx context.Context, authorizationHeader http.H
 	return c.iamcoreClient.DeleteResource(ctx, authorizationHeader, resourceIRN)
 }
 
-func (c *сlient) AttachPrincipalToPolicy(ctx context.Context, authorizationHeader http.Header, application, tenantID, policyID string) error {
+func (c *сlient) AttachUserToPolicy(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, policyID string, userIRN *irn.IRN) error {
 	if c.disabled {
 		return ErrSDKDisabled
 	}
 
-	principalIRN, err := c.iamcoreClient.GetPrincipalIRN(ctx, authorizationHeader)
+	policyIRN, err := irn.NewIRN(userIRN.GetAccountID(), application, tenantID, nil, resourceType, nil, policyID)
 	if err != nil {
 		return err
 	}
 
-	policyIRN, err := irn.NewIRN(principalIRN.GetAccountID(), application, tenantID, nil, "policy", nil, policyID)
-	if err != nil {
-		return err
-	}
-
-	return c.iamcoreClient.AttachUserToPolicy(ctx, authorizationHeader, principalIRN, policyIRN)
+	return c.iamcoreClient.AttachUserToPolicy(ctx, authorizationHeader, userIRN, policyIRN)
 }
 
 func (c *сlient) CreateResourceType(ctx context.Context, authorizationHeader http.Header, accountID, application, resourceType,
