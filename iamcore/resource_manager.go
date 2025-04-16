@@ -55,7 +55,7 @@ type ResourceManager interface {
 	AttachUserToPolicy(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, policyID string, userIRN *irn.IRN) error
 }
 
-func (c *сlient) CreateResource(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, resourcePath, resourceID string,
+func (c *client) CreateResource(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, resourcePath, resourceID string,
 ) error {
 	if c.disabled {
 		return ErrSDKDisabled
@@ -77,7 +77,7 @@ func (c *сlient) CreateResource(ctx context.Context, authorizationHeader http.H
 	return c.iamcoreClient.CreateResource(ctx, authorizationHeader, createResourceRequestDTO)
 }
 
-func (c *сlient) DeleteResource(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, resourcePath, resourceID string,
+func (c *client) DeleteResource(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, resourcePath, resourceID string,
 ) error {
 	if c.disabled {
 		return ErrSDKDisabled
@@ -96,7 +96,7 @@ func (c *сlient) DeleteResource(ctx context.Context, authorizationHeader http.H
 	return c.iamcoreClient.DeleteResource(ctx, authorizationHeader, resourceIRN)
 }
 
-func (c *сlient) AttachUserToPolicy(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, policyID string, userIRN *irn.IRN) error {
+func (c *client) AttachUserToPolicy(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, policyID string, userIRN *irn.IRN) error {
 	if c.disabled {
 		return ErrSDKDisabled
 	}
@@ -109,7 +109,7 @@ func (c *сlient) AttachUserToPolicy(ctx context.Context, authorizationHeader ht
 	return c.iamcoreClient.AttachUserToPolicy(ctx, authorizationHeader, userIRN, policyIRN)
 }
 
-func (c *сlient) CreateResourceType(ctx context.Context, authorizationHeader http.Header, accountID, application, resourceType,
+func (c *client) CreateResourceType(ctx context.Context, authorizationHeader http.Header, accountID, application, resourceType,
 	actionPrefix string, operations []string,
 ) error {
 	if c.disabled {
@@ -130,7 +130,7 @@ func (c *сlient) CreateResourceType(ctx context.Context, authorizationHeader ht
 	return c.iamcoreClient.CreateResourceType(ctx, authorizationHeader, applicationIRN, requestDTO)
 }
 
-func (c *сlient) GetResourceTypes(ctx context.Context, authorizationHeader http.Header, accountID, application string) ([]*ResourceTypeResponseDTO, error) {
+func (c *client) GetResourceTypes(ctx context.Context, authorizationHeader http.Header, accountID, application string) ([]*ResourceTypeResponseDTO, error) {
 	if c.disabled {
 		return nil, ErrSDKDisabled
 	}

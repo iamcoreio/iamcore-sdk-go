@@ -37,7 +37,7 @@ const (
 	principalIRNKey                 contextKeyType = 1
 )
 
-func (c *сlient) WithAuth(next http.Handler) http.Handler {
+func (c *client) WithAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if c.disabled {
 			next.ServeHTTP(w, r)
@@ -79,17 +79,17 @@ func (c *сlient) WithAuth(next http.Handler) http.Handler {
 
 // SetAPIKeyAuthorizationHeader convenient method for setting "X-iamcore-API-Key" authentication header with configured API key as a value
 // into the provided request.
-func (c *сlient) SetAPIKeyAuthorizationHeader(r *http.Request) {
+func (c *client) SetAPIKeyAuthorizationHeader(r *http.Request) {
 	r.Header.Set(apiKeyHeaderName, c.apiKey)
 }
 
 // GetAPIKeyAuthorizationHeader convenient method that returns "X-iamcore-API-Key" authentication header with configured API key as a value.
-func (c *сlient) GetAPIKeyAuthorizationHeader() http.Header {
+func (c *client) GetAPIKeyAuthorizationHeader() http.Header {
 	return http.Header{apiKeyHeaderName: {c.apiKey}}
 }
 
 // GetPrincipalAuthorizationHeader extracts and returns principal's authorization header from the request context.
-func (c *сlient) GetPrincipalAuthorizationHeader(ctx context.Context) (http.Header, error) {
+func (c *client) GetPrincipalAuthorizationHeader(ctx context.Context) (http.Header, error) {
 	if c.disabled {
 		return nil, ErrSDKDisabled
 	}
