@@ -70,7 +70,7 @@ type AuthorizationClient interface {
 	EvaluateActionsOnIRNs(ctx context.Context, authorizationHeader http.Header, actions []string, irns []*irn.IRN) (map[string]*AllowedAndDeniedIRNs, error)
 }
 
-func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header, accountID, application,
+func (c *client) Authorize(ctx context.Context, authorizationHeader http.Header, accountID, application,
 	tenantID, resourceType, resourcePath string, resourceIDs []string, action string) (
 	[]string, error,
 ) {
@@ -78,7 +78,7 @@ func (c *сlient) Authorize(ctx context.Context, authorizationHeader http.Header
 		resourceType, resourcePath, resourceIDs, action, c.iamcoreClient.AuthorizeOnIRNs)
 }
 
-func (c *сlient) AuthorizeResources(ctx context.Context, authorizationHeader http.Header, accountID, application,
+func (c *client) AuthorizeResources(ctx context.Context, authorizationHeader http.Header, accountID, application,
 	tenantID, resourceType, resourcePath string, resourceIDs []string, action string) (
 	[]string, error,
 ) {
@@ -88,7 +88,7 @@ func (c *сlient) AuthorizeResources(ctx context.Context, authorizationHeader ht
 
 type AuthorizationFunction func(ctx context.Context, authorizationHeader http.Header, action string, resources []*irn.IRN) error
 
-func (c *сlient) authorize(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType,
+func (c *client) authorize(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType,
 	resourcePath string, resourceIDs []string, action string, function AuthorizationFunction) (
 	[]string, error,
 ) {
@@ -117,7 +117,7 @@ func (c *сlient) authorize(ctx context.Context, authorizationHeader http.Header
 	return getResourceIDs(resourceIRNs), nil
 }
 
-func (c *сlient) FilterAuthorizedResources(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType,
+func (c *client) FilterAuthorizedResources(ctx context.Context, authorizationHeader http.Header, accountID, application, tenantID, resourceType,
 	resourcePath string, resourceIDs []string, action string) (
 	[]string, error,
 ) {
@@ -138,7 +138,7 @@ func (c *сlient) FilterAuthorizedResources(ctx context.Context, authorizationHe
 	return getResourceIDs(authorizedResources), nil
 }
 
-func (c *сlient) AuthorizationDBQueryFilter(ctx context.Context, authorizationHeader http.Header, action, database string) (string, error) {
+func (c *client) AuthorizationDBQueryFilter(ctx context.Context, authorizationHeader http.Header, action, database string) (string, error) {
 	if c.disabled {
 		return "", ErrSDKDisabled
 	}
@@ -146,7 +146,7 @@ func (c *сlient) AuthorizationDBQueryFilter(ctx context.Context, authorizationH
 	return c.iamcoreClient.AuthorizationDBQueryFilter(ctx, authorizationHeader, action, database)
 }
 
-func (c *сlient) EvaluateActionsOnIRNs(ctx context.Context, authorizationHeader http.Header, actions []string, irns []*irn.IRN) (
+func (c *client) EvaluateActionsOnIRNs(ctx context.Context, authorizationHeader http.Header, actions []string, irns []*irn.IRN) (
 	map[string]*AllowedAndDeniedIRNs, error,
 ) {
 	if c.disabled {

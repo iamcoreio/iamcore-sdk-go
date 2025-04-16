@@ -11,7 +11,7 @@ type Client interface {
 	ResourceManager
 }
 
-type сlient struct {
+type client struct {
 	authenticators []Authenticator
 	iamcoreClient  *ServerClient
 	disabled       bool
@@ -23,7 +23,7 @@ func NewClient(apiKey, serverURL string, disabled bool) (Client, error) {
 	if disabled {
 		log.Println("iamcore SDK is DISABLED")
 
-		return &сlient{
+		return &client{
 			disabled: true,
 		}, nil
 	}
@@ -35,7 +35,7 @@ func NewClient(apiKey, serverURL string, disabled bool) (Client, error) {
 
 	iamcoreClient := NewServerClient(options.serverURL, http.DefaultClient)
 
-	return &сlient{
+	return &client{
 		authenticators: []Authenticator{
 			NewBearer(iamcoreClient),
 			NewAPIKey(iamcoreClient),
