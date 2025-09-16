@@ -31,12 +31,13 @@ type AuthorizedOnResourceListRequestDTO struct {
 }
 
 type CreateResourceRequestDTO struct {
-	Name         string `json:"name"`
-	Application  string `json:"application"`
-	Path         string `json:"path"`
-	ResourceType string `json:"resourceType"`
-	Enabled      bool   `json:"enabled"`
-	TenantID     string `json:"tenantID"`
+	Name         string   `json:"name"`
+	Application  string   `json:"application"`
+	Path         string   `json:"path"`
+	ResourceType string   `json:"resourceType"`
+	Enabled      bool     `json:"enabled"`
+	TenantID     string   `json:"tenantID"`
+	PoolIDs      []string `json:"poolIDs,omitempty"`
 }
 
 type CreateResourceTypeRequestDTO struct {
@@ -74,4 +75,18 @@ type AttachPolicyRequestDTO struct {
 type AllowedAndDeniedIRNs struct {
 	Allowed []*irn.IRN
 	Denied  []*irn.IRN
+}
+
+type PoolResponseDTO struct {
+	ID          string   `json:"id"`
+	IRN         *irn.IRN `json:"irn"`
+	Name        string   `json:"name"`
+	ResourceIDs []string `json:"resourceIDs"`
+}
+
+type PoolsResponseDTO struct {
+	Data     []*PoolResponseDTO `json:"data"`
+	Count    int                `json:"count"`
+	Page     int                `json:"page"`
+	PageSize int                `json:"pageSize"`
 }

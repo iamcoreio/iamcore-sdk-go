@@ -18,6 +18,16 @@ type ResourceManager interface {
 	// Returns ErrUnknown error in case of unexpected response from iamcore server.
 	CreateResource(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, resourcePath, resourceID string) error
 
+	// CreateResourceWithPools creates resource on iamcore and attaches it to pools.
+	//
+	// Returns ErrSDKDisabled error in case SDK is disabled.
+	// Returns ErrUnauthenticated error in case of unauthenticated access.
+	// Returns ErrConflict error in case duplicated resource found.
+	// Returns ErrForbidden error in case authenticated principal does not have sufficient permissions to create the resource.
+	// Returns ErrBadRequest error in case of invalid request.
+	// Returns ErrUnknown error in case of unexpected response from iamcore server.
+	CreateResourceWithPools(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, resourcePath, resourceID string, poolIDs []string) error
+
 	// DeleteResource deletes resource on iamcore.
 	//
 	// Returns ErrSDKDisabled error in case SDK is disabled.
@@ -53,6 +63,15 @@ type ResourceManager interface {
 	// Returns ErrBadRequest error in case of invalid request.
 	// Returns ErrUnknown error in case of unexpected response from iamcore server.
 	AttachUserToPolicy(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, policyID string, userIRN *irn.IRN) error
+
+	// GetPoolIDs retrieves pool IDs that are associated with the resource.
+	//
+	// Returns ErrSDKDisabled error in case SDK is disabled.
+	// Returns ErrUnauthenticated error in case of unauthenticated access.
+	// Returns ErrForbidden error in case authenticated principal does not have sufficient permissions to read resource types.
+	// Returns ErrBadRequest error in case of invalid request.
+	// Returns ErrUnknown error in case of unexpected response from iamcore server.
+	GetPoolIDs(ctx context.Context, authorizationHeader http.Header, tenantID, application, resourceType, resourceID string) ([]string, error)
 }
 
 func (c *client) CreateResource(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, resourcePath, resourceID string,
@@ -72,6 +91,31 @@ func (c *client) CreateResource(ctx context.Context, authorizationHeader http.He
 		Path:         resourcePath,
 		Enabled:      true,
 		TenantID:     tenantID,
+	}
+
+	return c.iamcoreClient.CreateResource(ctx, authorizationHeader, createResourceRequestDTO)
+}
+
+func (c *client) CreateResourceWithPools(ctx context.Context, authorizationHeader http.Header,
+	application, tenantID, resourceType, resourcePath, resourceID string, poolIDs []string) error {
+	if c.disabled {
+		return ErrSDKDisabled
+	}
+
+	if resourcePath == "" {
+		resourcePath = "/"
+	}
+
+	createResourceRequestDTO := CreateResourceRequestDTO{
+		Name:         resourceID,
+		Application:  application,
+		ResourceType: resourceType,
+		Path:         resourcePath,
+		Enabled:      true,
+		TenantID:     tenantID,
+	}
+	if len(poolIDs) > 0 {
+		createResourceRequestDTO.PoolIDs = poolIDs
 	}
 
 	return c.iamcoreClient.CreateResource(ctx, authorizationHeader, createResourceRequestDTO)
@@ -141,6 +185,42 @@ func (c *client) GetResourceTypes(ctx context.Context, authorizationHeader http.
 	}
 
 	return c.iamcoreClient.GetResourceTypes(ctx, authorizationHeader, applicationIRN)
+}
+
+func (c *client) GetPoolIDs(ctx context.Context, authorizationHeader http.Header, tenantID, application, resourceType, resourceID string) ([]string, error) {
+	if c.disabled {
+		return nil, ErrSDKDisabled
+	}
+
+	principalIRN, err := c.iamcoreClient.GetPrincipalIRN(ctx, authorizationHeader)
+	if err != nil {
+		return nil, err
+	}
+
+	resourceIRN, err := irn.NewIRN(
+		principalIRN.GetAccountID(),
+		application,
+		tenantID,
+		nil,
+		resourceType,
+		nil,
+		resourceID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	pools, err := c.iamcoreClient.GetPools(ctx, authorizationHeader, resourceIRN, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	poolIDs := make([]string, len(pools))
+	for i, pool := range pools {
+		poolIDs[i] = pool.ID
+	}
+
+	return poolIDs, nil
 }
 
 // dropEmptyStrings filters a slice to only non-empty strings.

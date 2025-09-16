@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"gitlab.kaaiot.net/core/lib/iamcore/irn.git"
 )
@@ -18,10 +19,11 @@ const (
 	applicationPath            = "/api/v1/applications"
 	evaluatePath               = "/api/v1/evaluate"
 	userPath                   = "/api/v1/users"
+	poolPath                   = "/api/v1/pools"
 	evaluateOnResourceTypePath = evaluatePath + "/resources"
 	evaluateActionsOnIRNsPath  = evaluatePath + "/irns/actions"
 	evaluateDBQueryFilterPath  = evaluatePath + "/database-query-filter"
-	pageSize                   = 100000
+	pageSize                   = 100_000
 )
 
 var (
@@ -407,6 +409,57 @@ func (c *ServerClient) AttachUserToPolicy(ctx context.Context, authorizationHead
 	}
 
 	return nil
+}
+
+func (c *ServerClient) GetPools(ctx context.Context, authorizationHeader http.Header, resourceIRN, poolIRN *irn.IRN, poolName string) ([]*PoolResponseDTO, error) {
+	url := c.getURL(poolPath)
+
+	query := map[string]string{
+		"name":     poolName,
+		"page":     strconv.Itoa(1),
+		"pageSize": strconv.Itoa(pageSize),
+	}
+
+	if poolIRN != nil {
+		query["irn"] = poolIRN.Base64()
+	}
+
+	if resourceIRN != nil {
+		query["resourceIRN"] = resourceIRN.Base64()
+	}
+
+	url += "?"
+
+	for key, value := range query {
+		if value != "" {
+			url += fmt.Sprintf("&%s=%s", key, value)
+		}
+	}
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	request.Header = authorizationHeader
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusOK {
+		var responseDTO PoolsResponseDTO
+		if err = json.NewDecoder(response.Body).Decode(&responseDTO); err != nil {
+			return nil, err
+		}
+
+		return responseDTO.Data, nil
+	}
+
+	return nil, handleServerErrorResponse(response)
 }
 
 func (c *ServerClient) getURL(path string) string {
