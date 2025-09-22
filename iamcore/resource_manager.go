@@ -71,7 +71,7 @@ type ResourceManager interface {
 	// Returns ErrForbidden error in case authenticated principal does not have sufficient permissions to read resource types.
 	// Returns ErrBadRequest error in case of invalid request.
 	// Returns ErrUnknown error in case of unexpected response from iamcore server.
-	GetPoolIDs(ctx context.Context, authorizationHeader http.Header, tenantID, application, resourceType, resourceID string) ([]string, error)
+	GetPoolIDs(ctx context.Context, authorizationHeader http.Header, resourceIRN, poolIRN *irn.IRN, poolName string) ([]string, error)
 }
 
 func (c *client) CreateResource(ctx context.Context, authorizationHeader http.Header, application, tenantID, resourceType, resourcePath, resourceID string,
@@ -187,30 +187,12 @@ func (c *client) GetResourceTypes(ctx context.Context, authorizationHeader http.
 	return c.iamcoreClient.GetResourceTypes(ctx, authorizationHeader, applicationIRN)
 }
 
-func (c *client) GetPoolIDs(ctx context.Context, authorizationHeader http.Header, tenantID, application, resourceType, resourceID string) ([]string, error) {
+func (c *client) GetPoolIDs(ctx context.Context, authorizationHeader http.Header, resourceIRN, poolIRN *irn.IRN, poolName string) ([]string, error) {
 	if c.disabled {
 		return nil, ErrSDKDisabled
 	}
 
-	principalIRN, err := c.iamcoreClient.GetPrincipalIRN(ctx, authorizationHeader)
-	if err != nil {
-		return nil, err
-	}
-
-	resourceIRN, err := irn.NewIRN(
-		principalIRN.GetAccountID(),
-		application,
-		tenantID,
-		nil,
-		resourceType,
-		nil,
-		resourceID,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	pools, err := c.iamcoreClient.GetPools(ctx, authorizationHeader, resourceIRN, nil, "")
+	pools, err := c.iamcoreClient.GetPools(ctx, authorizationHeader, resourceIRN, poolIRN, poolName)
 	if err != nil {
 		return nil, err
 	}
