@@ -425,7 +425,7 @@ func (c *ServerClient) GetPools(ctx context.Context, authorizationHeader http.He
 	}
 
 	if resourceIRN != nil {
-		query["resourceIRN"] = resourceIRN.Base64()
+		query["resourceIRN"] = resourceIRN.String()
 	}
 
 	url += "?"
