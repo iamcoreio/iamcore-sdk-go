@@ -77,6 +77,32 @@ type AllowedAndDeniedIRNs struct {
 	Denied  []*irn.IRN
 }
 
+type EvaluateDebugResourcesRequestDTO struct {
+	Application string     `json:"application"`
+	Principal   *irn.IRN   `json:"principal"`
+	Actions     []string   `json:"actions"`
+	Resources   []*irn.IRN `json:"resources"`
+}
+
+type DebugEvaluationActionDetail struct {
+	Action        string   `json:"action"`
+	Decision      string   `json:"decision"`
+	AllowPolicies []string `json:"allowPolicies,omitempty"`
+	DenyPolicies  []string `json:"denyPolicies,omitempty"`
+}
+
+type DebugEvaluationResourceItem struct {
+	ID       string                         `json:"id"`
+	IRN      *irn.IRN                       `json:"irn"`
+	Decision string                         `json:"decision"`
+	Actions  []*DebugEvaluationActionDetail `json:"actions"`
+}
+
+type EvaluateDebugResourcesResponseDTO struct {
+	Data                 []*DebugEvaluationResourceItem `json:"data"`
+	EvaluationTimeMillis int                            `json:"evaluationTimeMillis"`
+}
+
 type PoolResponseDTO struct {
 	ID          string   `json:"id"`
 	IRN         *irn.IRN `json:"irn"`

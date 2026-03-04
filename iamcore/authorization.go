@@ -68,6 +68,15 @@ type AuthorizationClient interface {
 	// Returns ErrUnauthenticated error in case of unauthorized access.
 	// Returns ErrBadRequest error in case of invalid request.
 	EvaluateActionsOnIRNs(ctx context.Context, authorizationHeader http.Header, actions []string, irns []*irn.IRN) (map[string]*AllowedAndDeniedIRNs, error)
+
+	// EvaluateActionsOnIRNsByPrincipal evaluates actions on a resource list for a specific principal.
+	// Returns a map associating each action with its corresponding permitted and prohibited IRNs.
+	//
+	// Returns ErrSDKDisabled error in case SDK is disabled.
+	// Returns ErrUnauthenticated error in case of unauthorized access.
+	// Returns ErrForbidden error in case authenticated principal does not have sufficient permissions.
+	// Returns ErrBadRequest error in case of invalid request.
+	EvaluateActionsOnIRNsByPrincipal(ctx context.Context, application, resourceType string, principal *irn.IRN, actions, resourceIDs []string) (map[string]*AllowedAndDeniedIRNs, error)
 }
 
 func (c *client) Authorize(ctx context.Context, authorizationHeader http.Header, accountID, application,
@@ -154,6 +163,49 @@ func (c *client) EvaluateActionsOnIRNs(ctx context.Context, authorizationHeader 
 	}
 
 	return c.iamcoreClient.EvaluateActionsOnIRNs(ctx, authorizationHeader, actions, irns)
+}
+
+func (c *сlient) EvaluateActionsOnIRNsByPrincipal(ctx context.Context,
+	application, resourceType string, principal *irn.IRN, actions, resourceIDs []string,
+) (map[string]*AllowedAndDeniedIRNs, error) {
+	if c.disabled {
+		return nil, ErrSDKDisabled
+	}
+
+	resourceIRNs, err := buildResourceIRNs(principal.GetAccountID(), application, principal.GetTenantID(), resourceType, "", resourceIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	responseDTO, err := c.iamcoreClient.EvaluateDebugResources(ctx, http.Header{apiKeyHeaderName: {c.apiKey}}, application, principal, resourceIRNs, actions)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertDebugEvaluationResponse(responseDTO)
+}
+
+func convertDebugEvaluationResponse(responseDTO *EvaluateDebugResourcesResponseDTO) (map[string]*AllowedAndDeniedIRNs, error) {
+	result := make(map[string]*AllowedAndDeniedIRNs)
+
+	for _, resource := range responseDTO.Data {
+		for _, action := range resource.Actions {
+			entry, ok := result[action.Action]
+			if !ok {
+				entry = &AllowedAndDeniedIRNs{}
+				result[action.Action] = entry
+			}
+
+			switch action.Decision {
+			case "allow":
+				entry.Allowed = append(entry.Allowed, resource.IRN)
+			case "deny":
+				entry.Denied = append(entry.Denied, resource.IRN)
+			}
+		}
+	}
+
+	return result, nil
 }
 
 func buildResourceIRNs(accountID, application, tenantID, resourceType, resourcePath string, resourceIDs []string) ([]*irn.IRN, error) {
