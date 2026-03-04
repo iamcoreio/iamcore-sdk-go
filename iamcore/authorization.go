@@ -165,7 +165,7 @@ func (c *client) EvaluateActionsOnIRNs(ctx context.Context, authorizationHeader 
 	return c.iamcoreClient.EvaluateActionsOnIRNs(ctx, authorizationHeader, actions, irns)
 }
 
-func (c *сlient) EvaluateActionsOnIRNsByPrincipal(ctx context.Context,
+func (c *client) EvaluateActionsOnIRNsByPrincipal(ctx context.Context,
 	application, resourceType string, principal *irn.IRN, actions, resourceIDs []string,
 ) (map[string]*AllowedAndDeniedIRNs, error) {
 	if c.disabled {
