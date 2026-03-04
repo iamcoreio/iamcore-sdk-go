@@ -22,6 +22,7 @@ const (
 	poolPath                   = "/api/v1/pools"
 	evaluateOnResourceTypePath = evaluatePath + "/resources"
 	evaluateActionsOnIRNsPath  = evaluatePath + "/irns/actions"
+	evaluateDebugResourcesPath = evaluatePath + "/debug/resources"
 	evaluateDBQueryFilterPath  = evaluatePath + "/database-query-filter"
 	pageSize                   = 100_000
 )
@@ -329,6 +330,45 @@ func (c *ServerClient) EvaluateActionsOnIRNs(ctx context.Context, authorizationH
 	if response.StatusCode == http.StatusOK {
 		responseDTO := map[string]*AllowedAndDeniedIRNs{}
 		if err = json.NewDecoder(response.Body).Decode(&responseDTO); err != nil {
+			return nil, err
+		}
+
+		return responseDTO, nil
+	}
+
+	return nil, handleServerErrorResponse(response)
+}
+
+func (c *ServerClient) EvaluateDebugResources(ctx context.Context, authorizationHeader http.Header,
+	application string, principal *irn.IRN, resources []*irn.IRN, actions []string,
+) (*EvaluateDebugResourcesResponseDTO, error) {
+	requestDTO, err := json.Marshal(&EvaluateDebugResourcesRequestDTO{
+		Application: application,
+		Principal:   principal,
+		Actions:     actions,
+		Resources:   resources,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getURL(evaluateDebugResourcesPath), bytes.NewReader(requestDTO))
+	if err != nil {
+		return nil, err
+	}
+
+	request.Header = authorizationHeader
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	defer response.Body.Close()
+
+	if response.StatusCode == http.StatusOK {
+		responseDTO := &EvaluateDebugResourcesResponseDTO{}
+		if err = json.NewDecoder(response.Body).Decode(responseDTO); err != nil {
 			return nil, err
 		}
 

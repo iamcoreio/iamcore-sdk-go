@@ -1,5 +1,6 @@
 variables:
   GO_SOURCES_DIR: ./iamcore
+  dependency_check: "false"
 
 include:
   - project: 'devops/gitlab-ci-templates'
