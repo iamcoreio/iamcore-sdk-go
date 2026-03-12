@@ -342,17 +342,22 @@ func (c *ServerClient) EvaluateActionsOnIRNs(ctx context.Context, authorizationH
 func (c *ServerClient) EvaluateDebugResources(ctx context.Context, authorizationHeader http.Header,
 	application string, principal *irn.IRN, resources []*irn.IRN, actions []string,
 ) (*EvaluateDebugResourcesResponseDTO, error) {
-	requestDTO, err := json.Marshal(&EvaluateDebugResourcesRequestDTO{
+	base64Resources := make([]*irn.IRN64, len(resources))
+	for i, r := range resources {
+		base64Resources[i] = &irn.IRN64{IRN: *r}
+	}
+
+	payload, err := json.Marshal(&EvaluateDebugResourcesRequestDTO{
 		Application: application,
-		Principal:   principal,
+		Principal:   &irn.IRN64{IRN: *principal},
 		Actions:     actions,
-		Resources:   resources,
+		Resources:   base64Resources,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getURL(evaluateDebugResourcesPath), bytes.NewReader(requestDTO))
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.getURL(evaluateDebugResourcesPath), bytes.NewReader(payload))
 	if err != nil {
 		return nil, err
 	}
