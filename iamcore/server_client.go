@@ -22,7 +22,7 @@ const (
 	poolPath                   = "/api/v1/pools"
 	evaluateOnResourceTypePath = evaluatePath + "/resources"
 	evaluateActionsOnIRNsPath  = evaluatePath + "/irns/actions"
-	evaluateDebugResourcesPath = evaluatePath + "/debug/resources"
+	evaluateDebugResourcesPath = evaluatePath + "/resources/list"
 	evaluateDBQueryFilterPath  = evaluatePath + "/database-query-filter"
 	pageSize                   = 100_000
 )
@@ -340,7 +340,7 @@ func (c *ServerClient) EvaluateActionsOnIRNs(ctx context.Context, authorizationH
 }
 
 func (c *ServerClient) EvaluateDebugResources(ctx context.Context, authorizationHeader http.Header,
-	application string, principal *irn.IRN, resources []*irn.IRN, actions []string,
+	application string, resources []*irn.IRN, actions []string,
 ) (*EvaluateDebugResourcesResponseDTO, error) {
 	base64Resources := make([]*irn.IRN64, len(resources))
 	for i, r := range resources {
@@ -349,7 +349,6 @@ func (c *ServerClient) EvaluateDebugResources(ctx context.Context, authorization
 
 	payload, err := json.Marshal(&EvaluateDebugResourcesRequestDTO{
 		Application: application,
-		Principal:   &irn.IRN64{IRN: *principal},
 		Actions:     actions,
 		Resources:   base64Resources,
 	})

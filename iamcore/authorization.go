@@ -76,7 +76,7 @@ type AuthorizationClient interface {
 	// Returns ErrUnauthenticated error in case of unauthorized access.
 	// Returns ErrForbidden error in case authenticated principal does not have sufficient permissions.
 	// Returns ErrBadRequest error in case of invalid request.
-	EvaluateActionsOnIRNsByPrincipal(ctx context.Context, application, resourceType string, principal *irn.IRN, actions, resourceIDs []string) (map[string]*AllowedAndDeniedIRNs, error)
+	EvaluateActionsOnIRNsByPrincipal(ctx context.Context, authorizationHeader http.Header, application, resourceType string, principal *irn.IRN, actions, resourceIDs []string) (map[string]*AllowedAndDeniedIRNs, error)
 }
 
 func (c *client) Authorize(ctx context.Context, authorizationHeader http.Header, accountID, application,
@@ -165,7 +165,7 @@ func (c *client) EvaluateActionsOnIRNs(ctx context.Context, authorizationHeader 
 	return c.iamcoreClient.EvaluateActionsOnIRNs(ctx, authorizationHeader, actions, irns)
 }
 
-func (c *client) EvaluateActionsOnIRNsByPrincipal(ctx context.Context,
+func (c *client) EvaluateActionsOnIRNsByPrincipal(ctx context.Context, authorizationHeader http.Header,
 	application, resourceType string, principal *irn.IRN, actions, resourceIDs []string,
 ) (map[string]*AllowedAndDeniedIRNs, error) {
 	if c.disabled {
@@ -177,7 +177,7 @@ func (c *client) EvaluateActionsOnIRNsByPrincipal(ctx context.Context,
 		return nil, err
 	}
 
-	responseDTO, err := c.iamcoreClient.EvaluateDebugResources(ctx, http.Header{apiKeyHeaderName: {c.apiKey}}, application, principal, resourceIRNs, actions)
+	responseDTO, err := c.iamcoreClient.EvaluateDebugResources(ctx, authorizationHeader, application, resourceIRNs, actions)
 	if err != nil {
 		return nil, err
 	}
