@@ -79,7 +79,6 @@ type AllowedAndDeniedIRNs struct {
 
 type EvaluateDebugResourcesRequestDTO struct {
 	Application string       `json:"application"`
-	Principal   *irn.IRN64   `json:"principal"`
 	Actions     []string     `json:"actions"`
 	Resources   []*irn.IRN64 `json:"resources"`
 }
