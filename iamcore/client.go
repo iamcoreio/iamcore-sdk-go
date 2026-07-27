@@ -2,7 +2,6 @@ package iamcore
 
 import (
 	"log"
-	"net/http"
 )
 
 type Client interface {
@@ -33,7 +32,7 @@ func NewClient(apiKey, serverURL string, disabled bool) (Client, error) {
 		return nil, err
 	}
 
-	iamcoreClient := NewServerClient(options.serverURL, http.DefaultClient)
+	iamcoreClient := NewServerClient(options.serverURL, newDefaultHTTPClient())
 
 	return &client{
 		authenticators: []Authenticator{
